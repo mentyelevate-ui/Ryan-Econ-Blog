@@ -1,0 +1,13 @@
+[
+    {
+        "id": "test-pdf-post",
+        "title": "Economic Research Proposal: Test Post",
+        "slug": "economic-research-proposal-test",
+        "publishedAt": "2026-03-14T14:00:00.000Z",
+        "excerpt": "This is a test post to verify the new premium PDF viewer and upload pipeline.",
+        "content": "This is a researcher proposal in PDF format. Please view the embedded document below.",
+        "readTime": "1 min read",
+        "category": "Research",
+        "pdfUrl": "/uploads/test_proposal_manually_verified.pdf"
+    }
+]

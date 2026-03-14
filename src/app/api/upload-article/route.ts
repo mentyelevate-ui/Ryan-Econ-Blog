@@ -1,0 +1,135 @@
+import { NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
+
+// Define the expected BlogPost interface shape based on our mock data
+interface BlogPost {
+    id: string;
+    title: string;
+    slug: string;
+    publishedAt: string;
+    excerpt: string;
+    content?: string; // Legacy string content
+    body?: any; // PortableText array if we parse it
+    readTime: string;
+    category: string;
+    imageUrl?: string;
+    videoUrl?: string;
+    pdfUrl?: string;
+}
+
+export async function POST(request: Request) {
+    try {
+        const formData = await request.formData();
+        const file = formData.get("file") as File;
+
+        if (!file) {
+            return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+        }
+
+        // Check if file is a PDF
+        const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+
+        let title = "Untitled Article";
+        let bodyContent = "";
+        let pdfUrl = "";
+
+        if (isPdf) {
+            // Ensure uploads directory exists
+            const uploadsDir = path.join(process.cwd(), "public", "uploads");
+            if (!fs.existsSync(uploadsDir)) {
+                fs.mkdirSync(uploadsDir, { recursive: true });
+            }
+
+            // Sanitized filename
+            const fileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+            const filePath = path.join(uploadsDir, fileName);
+            
+            // Save PDF to disk
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            fs.writeFileSync(filePath, buffer);
+            
+            pdfUrl = `/uploads/${fileName}`;
+            title = file.name.replace(/\.pdf$/i, "").replace(/[-_]/g, " ");
+            bodyContent = "This is a researcher proposal in PDF format. Please view the embedded document below.";
+        } else {
+            // Read the file content as text
+            const textContent = await file.text();
+
+            // Very basic parsing for a Markdown file:
+            const lines = textContent.split("\n");
+            bodyContent = textContent;
+
+            if (lines.length > 0) {
+                // If the first line is a markdown header, use it as title
+                if (lines[0].startsWith("# ")) {
+                    title = lines[0].replace("# ", "").trim();
+                    bodyContent = lines.slice(1).join("\n").trim();
+                } else if (lines[0].trim() !== "") {
+                    // Otherwise just use the first non-empty line
+                    title = lines[0].trim();
+                }
+            }
+        }
+
+        // Generate a simple slug from the title
+        const slug = title
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)+/g, "");
+
+        // Create a short excerpt from the first paragraph
+        const paragraphs = bodyContent.split("\n\n").filter(p => p.trim());
+        const excerpt = paragraphs.length > 0
+            ? paragraphs[0].replace(/#/g, "").substring(0, 150) + "..."
+            : "No summary available.";
+
+        // Estimate read time (rough estimate: 200 words per minute)
+        const wordCount = bodyContent.split(/\s+/).length;
+        const readTimeMinutes = Math.max(1, Math.ceil(wordCount / 200));
+        const readTime = `${readTimeMinutes} min read`;
+
+        const newPost: BlogPost = {
+            id: Date.now().toString(), // Simple unique ID
+            title: title,
+            slug: slug,
+            publishedAt: new Date().toISOString(),
+            excerpt: excerpt,
+            content: bodyContent, // Store as raw markdown string for now
+            readTime: readTime,
+            category: "Research", // Default category
+            pdfUrl: pdfUrl || undefined,
+        };
+
+        // For local demonstration before Sanity is connected,
+        // we append this new post to the local mock database file.
+        const mockFilePath = path.join(process.cwd(), "src/lib/mockData/localBlog.json");
+
+        let existingPosts: BlogPost[] = [];
+        if (fs.existsSync(mockFilePath)) {
+            try {
+                const data = fs.readFileSync(mockFilePath, "utf-8");
+                existingPosts = JSON.parse(data);
+            } catch (e) {
+                console.error("Error reading local blog file", e);
+            }
+        }
+
+        // Check if a post with this slug already exists, update if it does
+        const existingIndex = existingPosts.findIndex(p => p.slug === slug);
+        if (existingIndex >= 0) {
+            existingPosts[existingIndex] = { ...existingPosts[existingIndex], ...newPost };
+        } else {
+            // Add new post to the top
+            existingPosts.unshift(newPost);
+        }
+
+        fs.writeFileSync(mockFilePath, JSON.stringify(existingPosts, null, 4));
+
+        return NextResponse.json({ success: true, title: newPost.title, slug: newPost.slug });
+    } catch (error) {
+        console.error("Upload Error:", error);
+        return NextResponse.json({ error: "Failed to parse article data" }, { status: 500 });
+    }
+}
