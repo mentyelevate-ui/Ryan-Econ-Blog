@@ -1,5 +1,16 @@
 [
     {
+        "id": "1773515264260",
+        "title": "Research project Proposal   Econometrics",
+        "slug": "research-project-proposal-econometrics",
+        "publishedAt": "2026-03-14T19:07:44.260Z",
+        "excerpt": "This is a researcher proposal in PDF format. Please view the embedded document below....",
+        "content": "This is a researcher proposal in PDF format. Please view the embedded document below.",
+        "readTime": "1 min read",
+        "category": "Research",
+        "pdfUrl": "/uploads/Research_project_Proposal_-_Econometrics.pdf"
+    },
+    {
         "id": "test-pdf-post",
         "title": "Economic Research Proposal: Test Post",
         "slug": "economic-research-proposal-test",
@@ -8,6 +19,8 @@
         "content": "This is a researcher proposal in PDF format. Please view the embedded document below.",
         "readTime": "1 min read",
         "category": "Research",
-        "pdfUrl": "/uploads/test_proposal_manually_verified.pdf"
+        "pdfUrl": "/uploads/test_proposal_manually_verified.pdf",
+        "imageUrl": "/uploads/default_economic_cover.png",
+        "disclaimer": "This is only a research and preexisting idea into a bigger scope we will evaluate."
     }
 ]

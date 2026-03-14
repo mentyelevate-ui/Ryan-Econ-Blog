@@ -30,8 +30,19 @@ export default function BlogGrid({ posts }: { posts: BlogPost[] }) {
                         className="group block glass rounded-2xl overflow-hidden hover:border-gold-500/20 transition-all duration-300 h-full"
                     >
                         {/* Cover Image */}
-                        <div className="h-52 bg-gradient-to-br from-navy-700 to-navy-600 relative overflow-hidden">
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(201,168,76,0.08),transparent_60%)]" />
+                        <div className="h-52 bg-navy-800 relative overflow-hidden">
+                            {post.imageUrl ? (
+                                <img 
+                                    src={post.imageUrl} 
+                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                                    alt={post.title}
+                                />
+                            ) : (
+                                <div className="absolute inset-0 bg-gradient-to-br from-navy-700 to-navy-600">
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(201,168,76,0.08),transparent_60%)]" />
+                                </div>
+                            )}
+                            
                             {post.videoUrl && (
                                 <div className="absolute top-3 right-3">
                                     <span className="text-[10px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full bg-crimson-500/20 text-crimson-400 backdrop-blur-sm border border-crimson-500/20">

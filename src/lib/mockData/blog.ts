@@ -6,8 +6,10 @@ export interface BlogPost {
     category: string;
     publishedAt: string;
     readTime: string;
-    coverImage: string;
+    imageUrl?: string;
     videoUrl?: string;
+    pdfUrl?: string;
+    disclaimer?: string;
     content: string;
 }
 

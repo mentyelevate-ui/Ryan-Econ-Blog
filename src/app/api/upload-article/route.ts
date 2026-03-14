@@ -16,6 +16,7 @@ interface BlogPost {
     imageUrl?: string;
     videoUrl?: string;
     pdfUrl?: string;
+    disclaimer?: string;
 }
 
 export async function POST(request: Request) {
@@ -100,6 +101,8 @@ export async function POST(request: Request) {
             readTime: readTime,
             category: "Research", // Default category
             pdfUrl: pdfUrl || undefined,
+            imageUrl: isPdf ? "/uploads/default_economic_cover.png" : undefined,
+            disclaimer: isPdf ? "This is only a research and preexisting idea into a bigger scope we will evaluate." : undefined,
         };
 
         // For local demonstration before Sanity is connected,

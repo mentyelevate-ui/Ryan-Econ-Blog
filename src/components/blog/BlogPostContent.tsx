@@ -11,52 +11,83 @@ export default function BlogPostContent({ post }: { post: any }) {
     const contentSections = typeof post.content === "string" ? post.content.split("\n\n") : [];
 
     return (
-        <div className="min-h-screen pt-28 pb-20">
-            <div className="max-w-4xl mx-auto px-6">
+        <div className="min-h-screen pb-20">
+            {/* Hero Section */}
+            <div className="relative h-[60vh] w-full overflow-hidden flex items-end pb-16">
+                {/* Background Image with Overlay */}
+                <div className="absolute inset-0 z-0">
+                    <img 
+                        src={post.imageUrl || "/uploads/default_economic_cover.png"} 
+                        alt={post.title}
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/80 to-transparent" />
+                </div>
+
+                <div className="max-w-4xl mx-auto px-6 relative z-10 w-full">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                    >
+                        <div className="flex items-center gap-3 mb-6">
+                            <span className="text-[10px] font-semibold uppercase tracking-widest px-3 py-1 rounded-full bg-gold-500/10 text-gold-400 border border-gold-500/20">
+                                {post.category}
+                            </span>
+                            <span className="text-xs text-slate-400">
+                                {new Date(post.publishedAt).toLocaleDateString("en-US", {
+                                    month: "long",
+                                    day: "numeric",
+                                    year: "numeric",
+                                })}
+                            </span>
+                        </div>
+                        <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-white drop-shadow-sm">
+                            {post.title}
+                        </h1>
+                        <p className="text-xl text-slate-300 leading-relaxed max-w-3xl font-light">
+                            {post.excerpt}
+                        </p>
+                    </motion.div>
+                </div>
+            </div>
+
+            <div className="max-w-4xl mx-auto px-6 mt-12">
                 {/* Back Link */}
                 <motion.div
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="mb-8"
+                    className="mb-12"
                 >
                     <Link
                         href="/blog"
-                        className="group flex items-center gap-2 text-sm text-slate-400 hover:text-gold-400 transition-colors"
+                        className="group inline-flex items-center gap-2 text-sm text-slate-400 hover:text-gold-400 transition-colors"
                     >
                         <HiArrowLeft className="transition-transform group-hover:-translate-x-1" />
                         Back to Research
                     </Link>
                 </motion.div>
 
-                {/* Header */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="mb-10"
-                >
-                    <div className="flex items-center gap-3 mb-4">
-                        <span className="text-[10px] font-semibold uppercase tracking-widest px-3 py-1 rounded-full bg-gold-500/10 text-gold-400 border border-gold-500/20">
-                            {post.category}
-                        </span>
-                        <span className="text-xs text-slate-500">
-                            {new Date(post.publishedAt).toLocaleDateString("en-US", {
-                                month: "long",
-                                day: "numeric",
-                                year: "numeric",
-                            })}
-                        </span>
-                        <span className="text-xs text-slate-600">&bull;</span>
-                        <span className="text-xs text-slate-500">{post.readTime}</span>
-                    </div>
-                    <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4">
-                        {post.title}
-                    </h1>
-                    <p className="text-lg text-slate-400 leading-relaxed">
-                        {post.excerpt}
-                    </p>
-                </motion.div>
+                {/* Research Disclaimer */}
+                {post.disclaimer && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
+                        className="mb-16 p-8 rounded-2xl bg-gold-500/5 border border-gold-500/10 relative overflow-hidden group"
+                    >
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <svg className="w-16 h-16 text-gold-500" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+                            </svg>
+                        </div>
+                        <h4 className="text-gold-400 font-bold uppercase tracking-widest text-xs mb-3">Research Scope & Intent</h4>
+                        <p className="text-slate-200 text-lg leading-relaxed font-medium relative z-10">
+                            &ldquo;{post.disclaimer}&rdquo;
+                        </p>
+                    </motion.div>
+                )}
 
                 {/* Video (if present) */}
                 {post.videoUrl && (
@@ -64,7 +95,7 @@ export default function BlogPostContent({ post }: { post: any }) {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.1 }}
-                        className="mb-10"
+                        className="mb-16"
                     >
                         <StickyVideoPlayer videoUrl={post.videoUrl} />
                     </motion.div>
@@ -74,7 +105,7 @@ export default function BlogPostContent({ post }: { post: any }) {
                 <motion.article
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.2 }}
+                    transition={{ duration: 0.6, delay: 0.4 }}
                     className="prose-custom prose-lg max-w-none text-slate-300"
                 >
                     {post.pdfUrl && (
