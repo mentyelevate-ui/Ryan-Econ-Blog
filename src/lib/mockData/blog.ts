@@ -10,6 +10,8 @@ export interface BlogPost {
     videoUrl?: string;
     pdfUrl?: string;
     disclaimer?: string;
+    insight?: string;
+    nativeContent?: string;
     content: string;
 }
 

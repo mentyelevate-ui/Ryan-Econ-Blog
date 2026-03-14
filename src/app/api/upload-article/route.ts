@@ -17,6 +17,8 @@ interface BlogPost {
     videoUrl?: string;
     pdfUrl?: string;
     disclaimer?: string;
+    insight?: string;
+    nativeContent?: string;
 }
 
 export async function POST(request: Request) {
@@ -103,6 +105,8 @@ export async function POST(request: Request) {
             pdfUrl: pdfUrl || undefined,
             imageUrl: isPdf ? "/uploads/default_economic_cover.png" : undefined,
             disclaimer: isPdf ? "This is only a research and preexisting idea into a bigger scope we will evaluate." : undefined,
+            insight: "", // Initialize as empty for user to edit
+            nativeContent: "", // Initialize as empty for user to edit
         };
 
         // For local demonstration before Sanity is connected,
@@ -134,5 +138,71 @@ export async function POST(request: Request) {
     } catch (error) {
         console.error("Upload Error:", error);
         return NextResponse.json({ error: "Failed to parse article data" }, { status: 500 });
+    }
+}
+
+export async function PUT(request: Request) {
+    try {
+        const body = await request.json();
+        const { id, ...updates } = body;
+
+        if (!id) {
+            return NextResponse.json({ error: "Missing post ID" }, { status: 400 });
+        }
+
+        const mockFilePath = path.join(process.cwd(), "src/lib/mockData/localBlog.json");
+        if (!fs.existsSync(mockFilePath)) {
+            return NextResponse.json({ error: "No posts found" }, { status: 404 });
+        }
+
+        const data = fs.readFileSync(mockFilePath, "utf-8");
+        const posts: BlogPost[] = JSON.parse(data);
+
+        const index = posts.findIndex(p => p.id === id);
+        if (index === -1) {
+            return NextResponse.json({ error: "Post not found" }, { status: 404 });
+        }
+
+        // Apply updates
+        posts[index] = { ...posts[index], ...updates };
+
+        fs.writeFileSync(mockFilePath, JSON.stringify(posts, null, 4));
+
+        return NextResponse.json({ success: true, post: posts[index] });
+    } catch (error) {
+        console.error("Update Error:", error);
+        return NextResponse.json({ error: "Failed to update article" }, { status: 500 });
+    }
+}
+
+export async function DELETE(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get("id");
+
+        if (!id) {
+            return NextResponse.json({ error: "Missing post ID" }, { status: 400 });
+        }
+
+        const mockFilePath = path.join(process.cwd(), "src/lib/mockData/localBlog.json");
+        if (!fs.existsSync(mockFilePath)) {
+            return NextResponse.json({ error: "No posts found" }, { status: 404 });
+        }
+
+        const data = fs.readFileSync(mockFilePath, "utf-8");
+        const posts: BlogPost[] = JSON.parse(data);
+
+        const filteredPosts = posts.filter(p => p.id !== id);
+
+        if (filteredPosts.length === posts.length) {
+            return NextResponse.json({ error: "Post not found" }, { status: 404 });
+        }
+
+        fs.writeFileSync(mockFilePath, JSON.stringify(filteredPosts, null, 4));
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error("Delete Error:", error);
+        return NextResponse.json({ error: "Failed to delete article" }, { status: 500 });
     }
 }

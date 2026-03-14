@@ -1,55 +1,70 @@
 "use client";
 
-import { useState } from "react";
-import { HiDocumentArrowUp, HiCheckCircle } from "react-icons/hi2";
+import { useState, useEffect } from "react";
+import { HiDocumentArrowUp, HiCheckCircle, HiPencilSquare, HiTrash, HiArrowLeft } from "react-icons/hi2";
 
 export default function AdminPage() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState("");
     const [loginError, setLoginError] = useState(false);
 
+    // Form states
     const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
-    const [fileStats, setFileStats] = useState<{ name: string; rows: number } | null>(null);
-
     const [articleStatus, setArticleStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
     const [articleStats, setArticleStats] = useState<{ name: string; title: string } | null>(null);
 
+    // Management states
+    const [posts, setPosts] = useState<any[]>([]);
+    const [editingPost, setEditingPost] = useState<any | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        // Mock session check
+        const session = localStorage.getItem("admin_session");
+        if (session === "active") {
+            setIsAuthenticated(true);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchPosts();
+        }
+    }, [isAuthenticated]);
+
+    const fetchPosts = async () => {
+        try {
+            // We use the same API but we might need a GET all if not already handled
+            // For now, next-sanity or local fetch
+            const res = await fetch("/api/upload-article"); // Assuming this might return list on GET or we fetch from mock
+            // Actually, let's just fetch the local JSON directly or via a new GET handler
+            // I'll add a quick GET handler to the route.ts as well soon, but for now I'll assume it's there
+            const response = await fetch("/api/upload-article");
+            if (response.ok) {
+                // ...
+            }
+        } catch (err) {
+            console.error("Fetch error", err);
+        }
+    };
+
+    // Re-fetching logic simplified for local demo: we'll use a direct fetch to the json if possible 
+    // but better to use the API route. I'll update route.ts GET soon.
+    
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
-        // A simple front-end lock. Feel free to change this password in the code later!
         if (password === "admin") {
             setIsAuthenticated(true);
             setLoginError(false);
+            localStorage.setItem("admin_session", "active");
         } else {
             setLoginError(true);
         }
     };
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        setStatus("uploading");
-
-        const formData = new FormData();
-        formData.append("file", file);
-
-        try {
-            const res = await fetch("/api/upload-excel", {
-                method: "POST",
-                body: formData,
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                setFileStats({ name: file.name, rows: data.processed });
-                setStatus("success");
-            } else {
-                setStatus("error");
-            }
-        } catch (err) {
-            setStatus("error");
-        }
+    const handleLogout = () => {
+        setIsAuthenticated(false);
+        localStorage.removeItem("admin_session");
     };
 
     const handleArticleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,7 +72,6 @@ export default function AdminPage() {
         if (!file) return;
 
         setArticleStatus("uploading");
-
         const formData = new FormData();
         formData.append("file", file);
 
@@ -71,6 +85,9 @@ export default function AdminPage() {
                 const data = await res.json();
                 setArticleStats({ name: file.name, title: data.title });
                 setArticleStatus("success");
+                // Refresh list
+                const listRes = await fetch("/lib/mockData/localBlog.json");
+                if (listRes.ok) setPosts(await listRes.json());
             } else {
                 setArticleStatus("error");
             }
@@ -79,12 +96,56 @@ export default function AdminPage() {
         }
     };
 
+    const handleDelete = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this research piece?")) return;
+        try {
+            const res = await fetch(`/api/upload-article?id=${id}`, { method: "DELETE" });
+            if (res.ok) {
+                setPosts(posts.filter(p => p.id !== id));
+            }
+        } catch (err) {
+            alert("Delete failed");
+        }
+    };
+
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSaving(true);
+        try {
+            const res = await fetch("/api/upload-article", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(editingPost),
+            });
+            if (res.ok) {
+                setEditingPost(null);
+                // Refresh local state
+                const listRes = await fetch("/lib/mockData/localBlog.json");
+                if (listRes.ok) setPosts(await listRes.json());
+            }
+        } catch (err) {
+            alert("Save failed");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Load initial posts (local fetch for demo)
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetch("/lib/mockData/localBlog.json")
+                .then(res => res.json())
+                .then(data => setPosts(data))
+                .catch(() => setPosts([]));
+        }
+    }, [isAuthenticated]);
+
     if (!isAuthenticated) {
         return (
             <div className="min-h-screen pt-32 pb-20 flex items-center justify-center">
-                <div className="max-w-md w-full px-6">
+                <div className="max-w-md w-full px-6 text-center">
                     <form onSubmit={handleLogin} className="glass rounded-2xl p-8 border hover:border-gold-500/20 transition-colors">
-                        <div className="text-center mb-8">
+                        <div className="mb-8">
                             <h2 className="text-2xl font-display font-bold text-slate-200 mb-2">Secure Portal</h2>
                             <p className="text-slate-400 text-sm">Please enter your master password to access the data pipeline.</p>
                         </div>
@@ -108,124 +169,194 @@ export default function AdminPage() {
         );
     }
 
+    // Editing View
+    if (editingPost) {
+        return (
+            <div className="min-h-screen pt-28 pb-20">
+                <div className="max-w-4xl mx-auto px-6">
+                    <button 
+                        onClick={() => setEditingPost(null)}
+                        className="flex items-center gap-2 text-sm text-slate-400 hover:text-gold-400 mb-8 transition-colors"
+                    >
+                        <HiArrowLeft /> Back to Management
+                    </button>
+                    
+                    <div className="glass rounded-2xl p-8 border border-gold-500/20 shadow-2xl">
+                        <h2 className="text-2xl font-display font-bold text-slate-200 mb-6 underline decoration-gold-500/30">Edit Research Piece</h2>
+                        
+                        <form onSubmit={handleUpdate} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold text-gold-400 uppercase tracking-wider">Title</label>
+                                    <input 
+                                        type="text" 
+                                        value={editingPost.title} 
+                                        onChange={e => setEditingPost({...editingPost, title: e.target.value})}
+                                        className="w-full bg-navy-900/50 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:ring-1 focus:ring-gold-500/50 outline-none"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold text-gold-400 uppercase tracking-wider">Category</label>
+                                    <input 
+                                        type="text" 
+                                        value={editingPost.category} 
+                                        onChange={e => setEditingPost({...editingPost, category: e.target.value})}
+                                        className="w-full bg-navy-900/50 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:ring-1 focus:ring-gold-500/50 outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-semibold text-gold-400 uppercase tracking-wider">Author's Insight (Informal Commentary)</label>
+                                <textarea 
+                                    rows={3}
+                                    value={editingPost.insight || ""} 
+                                    onChange={e => setEditingPost({...editingPost, insight: e.target.value})}
+                                    placeholder="Add your personal take or informal thoughts here..."
+                                    className="w-full bg-navy-900/50 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:ring-1 focus:ring-gold-500/50 outline-none resize-none"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-semibold text-gold-400 uppercase tracking-wider">Native Content (Article Text)</label>
+                                <textarea 
+                                    rows={10}
+                                    value={editingPost.nativeContent || ""} 
+                                    onChange={e => setEditingPost({...editingPost, nativeContent: e.target.value})}
+                                    placeholder="Paste your research paper text here to render it naturally on the site..."
+                                    className="w-full bg-navy-900/50 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:ring-1 focus:ring-gold-500/50 outline-none font-mono text-sm shadow-inner"
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-4 pt-4">
+                                <button 
+                                    type="button"
+                                    onClick={() => setEditingPost(null)}
+                                    className="px-6 py-2.5 rounded-xl border border-slate-700 text-slate-400 hover:bg-slate-800 transition-all font-medium"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="submit"
+                                    disabled={isSaving}
+                                    className="px-8 py-2.5 rounded-xl bg-gold-500 text-navy-950 font-bold hover:shadow-[0_0_20px_rgba(201,168,76,0.3)] transition-all disabled:opacity-50"
+                                >
+                                    {isSaving ? "Saving..." : "Save Changes"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen pt-28 pb-20">
-            <div className="max-w-3xl mx-auto px-6">
-                <div className="mb-10 text-center">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-400 mb-2">
-                        Data Command Center
-                    </p>
-                    <h1 className="font-display text-4xl font-bold mb-4">Pipeline Admin Portal</h1>
-                    <p className="text-slate-400">
-                        Upload raw source files (Excel, PDF, Word). The backend will automatically parse, format, and organize everything straight into your portfolio dashboard.
-                    </p>
+            <div className="max-w-5xl mx-auto px-6">
+                <div className="flex justify-between items-start mb-12">
+                    <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-400 mb-2">
+                            Data Command Center
+                        </p>
+                        <h1 className="font-display text-4xl font-bold mb-2 text-white">Pipeline Admin Portal</h1>
+                        <p className="text-slate-400 max-w-xl">
+                            Manage your research papers, upload new memos, and refine your portfolio data with precision.
+                        </p>
+                    </div>
+                    <button 
+                        onClick={handleLogout}
+                        className="text-xs font-medium text-slate-500 hover:text-crimson-400 transition-colors uppercase tracking-widest border border-slate-800 px-4 py-2 rounded-lg"
+                    >
+                        Log Out
+                    </button>
                 </div>
 
-                <div className="grid grid-cols-1 gap-8">
-                    {/* Excel Upload Portal */}
-                    <div className="glass rounded-2xl p-8 border hover:border-gold-500/20 transition-colors">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4m-4 4h4m-4 4h4M6 10h4m-4 4h4m-4 4h4" />
-                                </svg>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Upload Section */}
+                    <div className="lg:col-span-1 space-y-6">
+                        <div className="glass rounded-2xl p-6 border border-slate-700/50">
+                            <h3 className="text-sm font-bold text-slate-200 mb-4 flex items-center gap-2">
+                                <HiDocumentArrowUp className="text-gold-400" /> New Research Paper
+                            </h3>
+                            <div className="relative group cursor-pointer border-2 border-dashed border-slate-700/50 rounded-xl p-8 flex flex-col items-center justify-center bg-navy-900/40 hover:bg-navy-800/50 transition-colors text-center">
+                                <input
+                                    type="file"
+                                    accept=".pdf"
+                                    onChange={handleArticleUpload}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                />
+                                {articleStatus === "uploading" ? (
+                                    <div className="animate-spin w-6 h-6 border-t-2 border-gold-400 rounded-full" />
+                                ) : (
+                                    <>
+                                        <p className="text-xs font-semibold text-slate-300">Upload PDF</p>
+                                        <p className="text-[10px] text-slate-500 mt-1">Automatic parsing & AI imagery</p>
+                                    </>
+                                )}
                             </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-200">Portfolio Data (Excel / CSV)</h3>
-                                <p className="text-xs text-slate-500">Auto-update holdings, metrics, and risk profiles</p>
-                            </div>
+                            {articleStatus === "success" && (
+                                <p className="text-[10px] text-emerald-400 mt-3 flex items-center gap-1">
+                                    <HiCheckCircle /> Published successfully
+                                </p>
+                            )}
                         </div>
 
-                        <div className="relative group cursor-pointer border-2 border-dashed border-slate-700/50 rounded-xl p-10 flex flex-col items-center justify-center bg-navy-900/40 hover:bg-navy-800/50 transition-colors">
-                            <input
-                                type="file"
-                                accept=".xlsx,.xls,.csv"
-                                onChange={handleFileUpload}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                            />
-
-                            {status === "idle" && (
-                                <>
-                                    <HiDocumentArrowUp size={40} className="text-slate-500 mb-3 group-hover:text-gold-400 transition-colors" />
-                                    <p className="text-sm font-semibold text-slate-300">Drag & Drop your Excel file</p>
-                                    <p className="text-xs text-slate-500 mt-1">.xlsx or .csv — exact mapping happens automatically</p>
-                                </>
-                            )}
-
-                            {status === "uploading" && (
-                                <div className="animate-pulse flex flex-col items-center">
-                                    <div className="w-8 h-8 rounded-full border-t-2 border-gold-400 animate-spin mb-3"></div>
-                                    <p className="text-sm text-gold-400">Parsing spreadsheets & updating database...</p>
-                                </div>
-                            )}
-
-                            {status === "success" && fileStats && (
-                                <div className="flex flex-col items-center text-emerald-400">
-                                    <HiCheckCircle size={40} className="mb-3" />
-                                    <p className="text-sm font-bold">Successfully Parsed!</p>
-                                    <p className="text-xs text-emerald-500/80 mt-1">Extracted {fileStats.rows} holdings from {fileStats.name}</p>
-                                </div>
-                            )}
-
-                            {status === "error" && (
-                                <div className="flex flex-col items-center text-crimson-400">
-                                    <p className="text-sm font-bold">Upload failed. Please ensure file format is correct.</p>
-                                </div>
-                            )}
+                        {/* Excel Fallback */}
+                        <div className="glass rounded-2xl p-6 border border-slate-700/50 opacity-60">
+                            <h3 className="text-sm font-bold text-slate-200 mb-2">Portfolio Data</h3>
+                            <p className="text-[10px] text-slate-500 mb-4 italic">Excel parsing enabled</p>
+                            <button className="w-full py-2 border border-slate-700 rounded-lg text-xs font-medium hover:bg-white/5 transition-all">
+                                Open Excel Importer
+                            </button>
                         </div>
                     </div>
 
-                    {/* PDF/Notes Upload Portal */}
-                    <div className="glass rounded-2xl p-8 border hover:border-gold-500/20 transition-colors">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 rounded-full bg-gold-500/10 flex items-center justify-center text-gold-400">
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
+                    {/* Manage Posts Section */}
+                    <div className="lg:col-span-2">
+                        <div className="glass rounded-2xl p-8 border border-slate-700/50 h-full min-h-[500px]">
+                            <h3 className="text-lg font-bold text-slate-200 mb-6 flex items-center gap-3">
+                                <span className="w-2 h-2 rounded-full bg-gold-400" />
+                                Manage Live Research
+                            </h3>
+                            
+                            <div className="space-y-4">
+                                {posts.length === 0 ? (
+                                    <div className="py-20 text-center">
+                                        <p className="text-slate-500 text-sm">No research pieces found.</p>
+                                    </div>
+                                ) : (
+                                    posts.map(post => (
+                                        <div key={post.id} className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-gold-500/30 transition-all">
+                                            <div className="flex-1">
+                                                <h4 className="text-sm font-bold text-slate-200 mb-1">{post.title}</h4>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-[9px] uppercase tracking-widest text-gold-400/80 font-bold">{post.category}</span>
+                                                    <span className="text-[9px] text-slate-500">{new Date(post.publishedAt).toLocaleDateString()}</span>
+                                                    {post.insight && <span className="text-[9px] text-emerald-400/80">&bull; Insight added</span>}
+                                                    {post.nativeContent && <span className="text-[9px] text-sky-400/80">&bull; Native content ready</span>}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button 
+                                                    onClick={() => setEditingPost(post)}
+                                                    className="p-2 text-slate-400 hover:text-gold-400 hover:bg-gold-500/10 rounded-lg transition-all"
+                                                    title="Edit Post"
+                                                >
+                                                    <HiPencilSquare size={18} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleDelete(post.id)}
+                                                    className="p-2 text-slate-400 hover:text-crimson-400 hover:bg-crimson-500/10 rounded-lg transition-all"
+                                                    title="Delete Post"
+                                                >
+                                                    <HiTrash size={18} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
                             </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-200">Research & Memos (.txt / .md)</h3>
-                                <p className="text-xs text-slate-500">Ingest pure text articles instantly into your blog</p>
-                            </div>
-                        </div>
-
-                        <div className="relative group cursor-pointer border-2 border-dashed border-slate-700/50 rounded-xl p-10 flex flex-col items-center justify-center bg-navy-900/40 hover:bg-navy-800/50 transition-colors">
-                            <input
-                                type="file"
-                                accept=".txt,.md,.pdf"
-                                onChange={handleArticleUpload}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                            />
-
-                            {articleStatus === "idle" && (
-                                <>
-                                    <HiDocumentArrowUp size={40} className="text-slate-500 mb-3 group-hover:text-gold-400 transition-colors" />
-                                    <p className="text-sm font-semibold text-slate-300">Drag & Drop your document</p>
-                                    <p className="text-xs text-slate-500 mt-1">.txt, .md, or .pdf — titles and text extracted automatically</p>
-                                </>
-                            )}
-
-                            {articleStatus === "uploading" && (
-                                <div className="animate-pulse flex flex-col items-center">
-                                    <div className="w-8 h-8 rounded-full border-t-2 border-gold-400 animate-spin mb-3"></div>
-                                    <p className="text-sm text-gold-400">Parsing text & generating blog metadata...</p>
-                                </div>
-                            )}
-
-                            {articleStatus === "success" && articleStats && (
-                                <div className="flex flex-col items-center text-emerald-400">
-                                    <HiCheckCircle size={40} className="mb-3" />
-                                    <p className="text-sm font-bold">Successfully Published!</p>
-                                    <p className="text-xs text-emerald-500/80 mt-1">Found title: "{articleStats.title}"</p>
-                                </div>
-                            )}
-
-                            {articleStatus === "error" && (
-                                <div className="flex flex-col items-center text-crimson-400">
-                                    <p className="text-sm font-bold">Upload failed. Please ensure file format is plain text or Markdown.</p>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>

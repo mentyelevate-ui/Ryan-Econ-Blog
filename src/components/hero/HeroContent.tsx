@@ -39,7 +39,7 @@ export default function HeroContent() {
                 {/* Headline */}
                 <motion.h1
                     variants={itemVariants}
-                    className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight mb-6"
+                    className="font-display text-4xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight mb-6"
                 >
                     Tracking Trends.{" "}
                     <span className="gradient-text">Testing Strategies.</span>

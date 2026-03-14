@@ -13,7 +13,7 @@ export default function BlogPostContent({ post }: { post: any }) {
     return (
         <div className="min-h-screen pb-20">
             {/* Hero Section */}
-            <div className="relative h-[60vh] w-full overflow-hidden flex items-end pb-16">
+            <div className="relative h-[50vh] sm:h-[60vh] w-full overflow-hidden flex items-end pb-10 sm:pb-16">
                 {/* Background Image with Overlay */}
                 <div className="absolute inset-0 z-0">
                     <img 
@@ -69,6 +69,28 @@ export default function BlogPostContent({ post }: { post: any }) {
                     </Link>
                 </motion.div>
 
+                {/* Author's Insight (Personal/Informal) */}
+                {post.insight && (
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.6, delay: 0.3 }}
+                        className="mb-16 relative"
+                    >
+                        <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-sky-400 to-sky-600 rounded-full" />
+                        <div className="pl-6">
+                            <h4 className="text-[10px] font-bold text-sky-400 uppercase tracking-[0.2em] mb-3">Informal Insight</h4>
+                            <p className="text-slate-300 text-xl italic font-serif leading-relaxed">
+                                &ldquo;{post.insight}&rdquo;
+                            </p>
+                            <div className="mt-4 flex items-center gap-2">
+                                <div className="w-6 h-px bg-slate-700" />
+                                <span className="text-[10px] text-slate-500 font-medium italic">Author's Note</span>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
                 {/* Research Disclaimer */}
                 {post.disclaimer && (
                     <motion.div
@@ -108,29 +130,69 @@ export default function BlogPostContent({ post }: { post: any }) {
                     transition={{ duration: 0.6, delay: 0.4 }}
                     className="prose-custom prose-lg max-w-none text-slate-300"
                 >
-                    {post.pdfUrl && (
-                        <div className="mb-12">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-display font-bold text-slate-200 m-0">Document Viewer</h2>
-                                <a 
-                                    href={post.pdfUrl} 
-                                    download 
-                                    className="px-4 py-2 rounded-lg bg-gold-500/10 border border-gold-500/20 text-gold-400 text-sm font-semibold hover:bg-gold-500/20 transition-all flex items-center gap-2"
-                                >
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                    </svg>
-                                    Download Full Report
-                                </a>
+                    {/* Native Content (Clean Rendering) */}
+                    {post.nativeContent ? (
+                        <div className="mb-16 space-y-8">
+                            <div className="flex items-center gap-4 mb-8">
+                                <span className="w-8 h-[1px] bg-gold-500/30" />
+                                <span className="text-xs font-semibold text-gold-400 uppercase tracking-widest">Full Research Piece</span>
+                                <span className="flex-1 h-[1px] bg-gold-500/30" />
                             </div>
-                            <div className="aspect-[3/4] sm:aspect-video w-full glass rounded-2xl border border-slate-700/50 overflow-hidden shadow-2xl">
-                                <iframe 
-                                    src={`${post.pdfUrl}#toolbar=0`} 
-                                    className="w-full h-full border-none"
-                                    title={post.title}
-                                />
+                            <div className="native-research-content text-slate-200 leading-[1.8] font-light space-y-6">
+                                {post.nativeContent.split('\n\n').map((para: string, idx: number) => (
+                                    <p key={idx} className="first-letter:text-3xl first-letter:font-bold first-letter:text-gold-400 first-letter:float-left first-letter:mr-2 first-letter:mt-1">{para}</p>
+                                ))}
                             </div>
+                            
+                            {post.pdfUrl && (
+                                <div className="mt-12 p-6 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-crimson-500/10 flex items-center justify-center text-crimson-400">
+                                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-200">Original Research Paper (PDF)</p>
+                                            <p className="text-xs text-slate-500">View source document for charts & citations</p>
+                                        </div>
+                                    </div>
+                                    <a 
+                                        href={post.pdfUrl} 
+                                        download 
+                                        className="px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-xs font-bold hover:bg-gold-500 hover:text-navy-950 transition-all"
+                                    >
+                                        Download PDF
+                                    </a>
+                                </div>
+                            )}
                         </div>
+                    ) : (
+                        /* Fallback to PDF Viewer if no native content */
+                        post.pdfUrl && (
+                            <div className="mb-12">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xl font-display font-bold text-slate-200 m-0">Document Viewer</h2>
+                                    <a 
+                                        href={post.pdfUrl} 
+                                        download 
+                                        className="px-4 py-2 rounded-lg bg-gold-500/10 border border-gold-500/20 text-gold-400 text-sm font-semibold hover:bg-gold-500/20 transition-all flex items-center gap-2"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        </svg>
+                                        Download Full Report
+                                    </a>
+                                </div>
+                                    <div className="aspect-[4/5] sm:aspect-video w-full glass rounded-2xl border border-slate-700/50 overflow-hidden shadow-2xl">
+                                    <iframe 
+                                        src={`${post.pdfUrl}#toolbar=0`} 
+                                        className="w-full h-full border-none scale-100 sm:scale-100"
+                                        title={post.title}
+                                    />
+                                </div>
+                            </div>
+                        )
                     )}
 
                     {post.body ? (

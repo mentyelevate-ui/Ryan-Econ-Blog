@@ -49,7 +49,7 @@ export default function HomeBlogPreview() {
                                 className="group block glass rounded-2xl overflow-hidden hover:border-gold-500/20 transition-all duration-300"
                             >
                                 {/* Image placeholder */}
-                                <div className="h-48 bg-gradient-to-br from-navy-700 to-navy-600 relative overflow-hidden">
+                                <div className="h-40 sm:h-48 bg-gradient-to-br from-navy-700 to-navy-600 relative overflow-hidden">
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(201,168,76,0.08),transparent_60%)]" />
                                     <div className="absolute bottom-3 left-3">
                                         <span className="text-[10px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full bg-navy-900/60 text-gold-400 backdrop-blur-sm">
