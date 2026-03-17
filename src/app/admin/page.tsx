@@ -1,7 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { HiDocumentArrowUp, HiCheckCircle, HiPencilSquare, HiTrash, HiArrowLeft, HiPhoto } from "react-icons/hi2";
+import { 
+    HiDocumentArrowUp, 
+    HiCheckCircle, 
+    HiPencilSquare, 
+    HiTrash, 
+    HiArrowLeft, 
+    HiPhoto,
+    HiArrowUpTray,
+    HiAcademicCap,
+    HiCheck,
+    HiXMark,
+    HiBookOpen
+} from "react-icons/hi2";
 
 export default function AdminPage() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -18,6 +30,10 @@ export default function AdminPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [imageUploading, setImageUploading] = useState(false);
     const [postToDelete, setPostToDelete] = useState<string | null>(null);
+
+    // Resume states
+    const [resumeStatus, setResumeStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
+    const [resumeStats, setResumeStats] = useState<{ name: string } | null>(null);
 
     useEffect(() => {
         const session = localStorage.getItem("admin_session");
@@ -140,6 +156,32 @@ export default function AdminPage() {
             }
         } catch (err) {
             alert("Delete failed — check your connection.");
+        }
+    };
+
+    const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setResumeStatus("uploading");
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const res = await fetch("/api/upload-resume", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (res.ok) {
+                setResumeStats({ name: file.name });
+                setResumeStatus("success");
+                setTimeout(() => setResumeStatus("idle"), 5000);
+            } else {
+                setResumeStatus("error");
+            }
+        } catch (err) {
+            setResumeStatus("error");
         }
     };
 
@@ -388,6 +430,72 @@ export default function AdminPage() {
                                     <HiCheckCircle /> &ldquo;{articleStats.title}&rdquo; published
                                 </p>
                             )}
+                        </div>
+
+                        {/* Career Assets / Resume */}
+                        <div className="glass rounded-2xl p-6 border border-slate-700/50">
+                            <h3 className="text-sm font-bold text-slate-200 mb-4 flex items-center gap-2">
+                                <HiAcademicCap className="text-gold-400" /> Career Assets
+                            </h3>
+
+                            <div className="space-y-4">
+                                <div className="relative group">
+                                    <input
+                                        type="file"
+                                        onChange={handleResumeUpload}
+                                        accept=".pdf"
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                    />
+                                    <div className={`p-6 border-2 border-dashed rounded-xl transition-all duration-300 flex flex-col items-center justify-center gap-3 text-center
+                                        ${resumeStatus === 'uploading' ? 'border-gold-500/50 bg-gold-500/5' :
+                                            resumeStatus === 'success' ? 'border-emerald-500/50 bg-emerald-500/5' :
+                                                resumeStatus === 'error' ? 'border-crimson-500/50 bg-crimson-500/5' :
+                                                    'border-slate-700/50 hover:border-slate-600 hover:bg-white/5'}`}>
+                                        
+                                        {resumeStatus === 'idle' && (
+                                            <>
+                                                <HiArrowUpTray className="text-slate-500" size={20} />
+                                                <div>
+                                                    <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Update 📜</p>
+                                                    <p className="text-[9px] text-slate-500 mt-0.5">PDF Format</p>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {resumeStatus === 'uploading' && (
+                                            <div className="animate-spin w-5 h-5 border-t-2 border-gold-400 rounded-full" />
+                                        )}
+
+                                        {resumeStatus === 'success' && (
+                                            <>
+                                                <HiCheck className="text-emerald-400" />
+                                                <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Success!</p>
+                                            </>
+                                        )}
+
+                                        {resumeStatus === 'error' && (
+                                            <>
+                                                <HiXMark className="text-crimson-400" />
+                                                <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest">Failed</p>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                                
+                                <div className="p-3 rounded-xl bg-navy-900/40 border border-slate-700/50 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <HiBookOpen className="text-slate-500" size={14} />
+                                        <span className="text-[10px] text-slate-400 font-medium">resume.pdf</span>
+                                    </div>
+                                    <a 
+                                        href="/resume.pdf" 
+                                        target="_blank" 
+                                        className="text-[9px] font-bold uppercase tracking-widest text-gold-400 hover:text-gold-300 transition-colors"
+                                    >
+                                        View
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
