@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { HiDocumentArrowUp, HiCheckCircle, HiPencilSquare, HiTrash, HiArrowLeft } from "react-icons/hi2";
+import { HiDocumentArrowUp, HiCheckCircle, HiPencilSquare, HiTrash, HiArrowLeft, HiPhoto } from "react-icons/hi2";
 
 export default function AdminPage() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -9,7 +9,6 @@ export default function AdminPage() {
     const [loginError, setLoginError] = useState(false);
 
     // Form states
-    const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
     const [articleStatus, setArticleStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
     const [articleStats, setArticleStats] = useState<{ name: string; title: string } | null>(null);
 
@@ -17,9 +16,9 @@ export default function AdminPage() {
     const [posts, setPosts] = useState<any[]>([]);
     const [editingPost, setEditingPost] = useState<any | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [imageUploading, setImageUploading] = useState(false);
 
     useEffect(() => {
-        // Mock session check
         const session = localStorage.getItem("admin_session");
         if (session === "active") {
             setIsAuthenticated(true);
@@ -28,29 +27,23 @@ export default function AdminPage() {
 
     useEffect(() => {
         if (isAuthenticated) {
-            fetchPosts();
+            loadPosts();
         }
     }, [isAuthenticated]);
 
-    const fetchPosts = async () => {
+    const loadPosts = async () => {
         try {
-            // We use the same API but we might need a GET all if not already handled
-            // For now, next-sanity or local fetch
-            const res = await fetch("/api/upload-article"); // Assuming this might return list on GET or we fetch from mock
-            // Actually, let's just fetch the local JSON directly or via a new GET handler
-            // I'll add a quick GET handler to the route.ts as well soon, but for now I'll assume it's there
-            const response = await fetch("/api/upload-article");
-            if (response.ok) {
-                // ...
+            const res = await fetch("/api/upload-article");
+            if (res.ok) {
+                const data = await res.json();
+                setPosts(data);
             }
         } catch (err) {
-            console.error("Fetch error", err);
+            console.error("Failed to load posts", err);
+            setPosts([]);
         }
     };
 
-    // Re-fetching logic simplified for local demo: we'll use a direct fetch to the json if possible 
-    // but better to use the API route. I'll update route.ts GET soon.
-    
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         if (password === "admin") {
@@ -85,14 +78,47 @@ export default function AdminPage() {
                 const data = await res.json();
                 setArticleStats({ name: file.name, title: data.title });
                 setArticleStatus("success");
-                // Refresh list
-                const listRes = await fetch("/lib/mockData/localBlog.json");
-                if (listRes.ok) setPosts(await listRes.json());
+                await loadPosts();
             } else {
                 setArticleStatus("error");
             }
         } catch (err) {
             setArticleStatus("error");
+        }
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !editingPost) return;
+
+        setImageUploading(true);
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            // Save image to public/uploads
+            const fileName = `cover_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+            const reader = new FileReader();
+            reader.onload = () => {
+                // For client-side preview
+                setEditingPost({ ...editingPost, imageUrl: `/uploads/${fileName}` });
+            };
+            reader.readAsDataURL(file);
+
+            // Upload via a simple POST to a dedicated image endpoint or reuse formData
+            const imgRes = await fetch("/api/upload-image", {
+                method: "POST",
+                body: formData,
+            });
+            
+            if (imgRes.ok) {
+                const data = await imgRes.json();
+                setEditingPost((prev: any) => ({ ...prev, imageUrl: data.url }));
+            }
+        } catch (err) {
+            console.error("Image upload failed", err);
+        } finally {
+            setImageUploading(false);
         }
     };
 
@@ -119,9 +145,7 @@ export default function AdminPage() {
             });
             if (res.ok) {
                 setEditingPost(null);
-                // Refresh local state
-                const listRes = await fetch("/lib/mockData/localBlog.json");
-                if (listRes.ok) setPosts(await listRes.json());
+                await loadPosts();
             }
         } catch (err) {
             alert("Save failed");
@@ -130,16 +154,6 @@ export default function AdminPage() {
         }
     };
 
-    // Load initial posts (local fetch for demo)
-    useEffect(() => {
-        if (isAuthenticated) {
-            fetch("/lib/mockData/localBlog.json")
-                .then(res => res.json())
-                .then(data => setPosts(data))
-                .catch(() => setPosts([]));
-        }
-    }, [isAuthenticated]);
-
     if (!isAuthenticated) {
         return (
             <div className="min-h-screen pt-32 pb-20 flex items-center justify-center">
@@ -147,7 +161,7 @@ export default function AdminPage() {
                     <form onSubmit={handleLogin} className="glass rounded-2xl p-8 border hover:border-gold-500/20 transition-colors">
                         <div className="mb-8">
                             <h2 className="text-2xl font-display font-bold text-slate-200 mb-2">Secure Portal</h2>
-                            <p className="text-slate-400 text-sm">Please enter your master password to access the data pipeline.</p>
+                            <p className="text-slate-400 text-sm">Enter your master password to access the data pipeline.</p>
                         </div>
                         <input
                             type="password"
@@ -206,8 +220,58 @@ export default function AdminPage() {
                                 </div>
                             </div>
 
+                            {/* Cover Image Upload */}
                             <div className="space-y-2">
-                                <label className="text-xs font-semibold text-gold-400 uppercase tracking-wider">Author's Insight (Informal Commentary)</label>
+                                <label className="text-xs font-semibold text-gold-400 uppercase tracking-wider flex items-center gap-2">
+                                    <HiPhoto size={14} /> Cover Image
+                                </label>
+                                <div className="flex items-center gap-4">
+                                    {editingPost.imageUrl && (
+                                        <div className="w-24 h-16 rounded-lg overflow-hidden border border-slate-700 shrink-0">
+                                            <img src={editingPost.imageUrl} alt="Cover" className="w-full h-full object-cover" />
+                                        </div>
+                                    )}
+                                    <div className="flex-1">
+                                        <div className="relative group cursor-pointer border-2 border-dashed border-slate-700/50 rounded-xl p-4 flex items-center justify-center bg-navy-900/40 hover:bg-navy-800/50 transition-colors">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleImageUpload}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                            />
+                                            {imageUploading ? (
+                                                <div className="animate-spin w-5 h-5 border-t-2 border-gold-400 rounded-full" />
+                                            ) : (
+                                                <p className="text-xs text-slate-400">Drop an image here or click to upload</p>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <span className="text-[10px] text-slate-500">or paste a URL:</span>
+                                            <input 
+                                                type="text" 
+                                                value={editingPost.imageUrl || ""} 
+                                                onChange={e => setEditingPost({...editingPost, imageUrl: e.target.value})}
+                                                placeholder="https://..."
+                                                className="flex-1 bg-navy-900/50 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:ring-1 focus:ring-gold-500/50 outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-semibold text-gold-400 uppercase tracking-wider">Excerpt / Summary</label>
+                                <textarea 
+                                    rows={2}
+                                    value={editingPost.excerpt || ""} 
+                                    onChange={e => setEditingPost({...editingPost, excerpt: e.target.value})}
+                                    placeholder="Short summary for the blog grid..."
+                                    className="w-full bg-navy-900/50 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:ring-1 focus:ring-gold-500/50 outline-none resize-none"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-semibold text-gold-400 uppercase tracking-wider">Author&apos;s Insight (Informal Commentary)</label>
                                 <textarea 
                                     rows={3}
                                     value={editingPost.insight || ""} 
@@ -225,6 +289,17 @@ export default function AdminPage() {
                                     onChange={e => setEditingPost({...editingPost, nativeContent: e.target.value})}
                                     placeholder="Paste your research paper text here to render it naturally on the site..."
                                     className="w-full bg-navy-900/50 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:ring-1 focus:ring-gold-500/50 outline-none font-mono text-sm shadow-inner"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-semibold text-gold-400 uppercase tracking-wider">Research Disclaimer</label>
+                                <input 
+                                    type="text" 
+                                    value={editingPost.disclaimer || ""} 
+                                    onChange={e => setEditingPost({...editingPost, disclaimer: e.target.value})}
+                                    placeholder="Optional disclaimer text..."
+                                    className="w-full bg-navy-900/50 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:ring-1 focus:ring-gold-500/50 outline-none"
                                 />
                             </div>
 
@@ -282,7 +357,7 @@ export default function AdminPage() {
                             <div className="relative group cursor-pointer border-2 border-dashed border-slate-700/50 rounded-xl p-8 flex flex-col items-center justify-center bg-navy-900/40 hover:bg-navy-800/50 transition-colors text-center">
                                 <input
                                     type="file"
-                                    accept=".pdf"
+                                    accept=".pdf,.txt,.md"
                                     onChange={handleArticleUpload}
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                 />
@@ -290,25 +365,16 @@ export default function AdminPage() {
                                     <div className="animate-spin w-6 h-6 border-t-2 border-gold-400 rounded-full" />
                                 ) : (
                                     <>
-                                        <p className="text-xs font-semibold text-slate-300">Upload PDF</p>
-                                        <p className="text-[10px] text-slate-500 mt-1">Automatic parsing & AI imagery</p>
+                                        <p className="text-xs font-semibold text-slate-300">Upload PDF / TXT / MD</p>
+                                        <p className="text-[10px] text-slate-500 mt-1">Automatic parsing & metadata</p>
                                     </>
                                 )}
                             </div>
-                            {articleStatus === "success" && (
+                            {articleStatus === "success" && articleStats && (
                                 <p className="text-[10px] text-emerald-400 mt-3 flex items-center gap-1">
-                                    <HiCheckCircle /> Published successfully
+                                    <HiCheckCircle /> &ldquo;{articleStats.title}&rdquo; published
                                 </p>
                             )}
-                        </div>
-
-                        {/* Excel Fallback */}
-                        <div className="glass rounded-2xl p-6 border border-slate-700/50 opacity-60">
-                            <h3 className="text-sm font-bold text-slate-200 mb-2">Portfolio Data</h3>
-                            <p className="text-[10px] text-slate-500 mb-4 italic">Excel parsing enabled</p>
-                            <button className="w-full py-2 border border-slate-700 rounded-lg text-xs font-medium hover:bg-white/5 transition-all">
-                                Open Excel Importer
-                            </button>
                         </div>
                     </div>
 
@@ -323,21 +389,29 @@ export default function AdminPage() {
                             <div className="space-y-4">
                                 {posts.length === 0 ? (
                                     <div className="py-20 text-center">
-                                        <p className="text-slate-500 text-sm">No research pieces found.</p>
+                                        <p className="text-slate-500 text-sm">No research pieces found. Upload your first one!</p>
                                     </div>
                                 ) : (
                                     posts.map(post => (
                                         <div key={post.id} className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-gold-500/30 transition-all">
-                                            <div className="flex-1">
-                                                <h4 className="text-sm font-bold text-slate-200 mb-1">{post.title}</h4>
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-[9px] uppercase tracking-widest text-gold-400/80 font-bold">{post.category}</span>
-                                                    <span className="text-[9px] text-slate-500">{new Date(post.publishedAt).toLocaleDateString()}</span>
-                                                    {post.insight && <span className="text-[9px] text-emerald-400/80">&bull; Insight added</span>}
-                                                    {post.nativeContent && <span className="text-[9px] text-sky-400/80">&bull; Native content ready</span>}
+                                            <div className="flex items-center gap-4 flex-1 min-w-0">
+                                                {post.imageUrl && (
+                                                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-700 shrink-0">
+                                                        <img src={post.imageUrl} alt="" className="w-full h-full object-cover" />
+                                                    </div>
+                                                )}
+                                                <div className="min-w-0">
+                                                    <h4 className="text-sm font-bold text-slate-200 mb-1 truncate">{post.title}</h4>
+                                                    <div className="flex items-center gap-3 flex-wrap">
+                                                        <span className="text-[9px] uppercase tracking-widest text-gold-400/80 font-bold">{post.category}</span>
+                                                        <span className="text-[9px] text-slate-500">{new Date(post.publishedAt).toLocaleDateString()}</span>
+                                                        {post.insight && <span className="text-[9px] text-emerald-400/80">&bull; Insight</span>}
+                                                        {post.nativeContent && <span className="text-[9px] text-sky-400/80">&bull; Native</span>}
+                                                        {post.pdfUrl && <span className="text-[9px] text-crimson-400/80">&bull; PDF</span>}
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 shrink-0 ml-4">
                                                 <button 
                                                     onClick={() => setEditingPost(post)}
                                                     className="p-2 text-slate-400 hover:text-gold-400 hover:bg-gold-500/10 rounded-lg transition-all"

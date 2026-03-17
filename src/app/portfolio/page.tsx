@@ -1,38 +1,32 @@
 import type { Metadata } from "next";
-import PortfolioTracker from "@/components/portfolio/PortfolioTracker";
-import { getHoldings } from "@/lib/sanityQueries";
+import PortfolioClientView from "@/components/portfolio/PortfolioClientView";
 
 export const metadata: Metadata = {
-    title: "Mock Portfolio | Ryan Renfro",
+    title: "Client Portfolios | Ryan Renfro",
     description:
-        "A paper trading sandbox where I track simulated positions and write investment theses to practice fundamental analysis and portfolio construction.",
+        "Mock client portfolio management showcasing financial planning strategies for two distinct family profiles. A practice sandbox demonstrating advisor-client relationship management.",
 };
 
-export const revalidate = 60; // Revalidate live data every minute
-
-export default async function PortfolioPage() {
-    const holdings = await getHoldings();
-
+export default function PortfolioPage() {
     return (
         <div className="min-h-screen pt-28 pb-20">
             <div className="max-w-7xl mx-auto px-6">
                 {/* Header */}
-                <div className="mb-12">
+                <div className="mb-10">
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-400 mb-2">
-                        Paper Trading Sandbox
+                        Financial Planning Sandbox
                     </p>
                     <h1 className="font-display text-4xl sm:text-5xl font-bold mb-4">
-                        Mock Portfolio
+                        Client Portfolios
                     </h1>
                     <p className="text-slate-400 max-w-2xl leading-relaxed">
-                        A practice portfolio where I research companies, write investment
-                        theses, and track how my picks would have performed. Click any card
-                        to read my reasoning — the process matters more than the simulated
-                        numbers.
+                        Two mock family clients, each with unique financial goals, risk
+                        tolerances, and investment strategies. Select a client below to
+                        explore their portfolio, allocation, and our advisory relationship.
                     </p>
                 </div>
 
-                <PortfolioTracker initialHoldings={holdings} />
+                <PortfolioClientView />
             </div>
         </div>
     );

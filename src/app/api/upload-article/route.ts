@@ -21,6 +21,21 @@ interface BlogPost {
     nativeContent?: string;
 }
 
+export async function GET() {
+    try {
+        const mockFilePath = path.join(process.cwd(), "src/lib/mockData/localBlog.json");
+        if (!fs.existsSync(mockFilePath)) {
+            return NextResponse.json([]);
+        }
+        const data = fs.readFileSync(mockFilePath, "utf-8");
+        const posts: BlogPost[] = JSON.parse(data);
+        return NextResponse.json(posts);
+    } catch (error) {
+        console.error("GET Error:", error);
+        return NextResponse.json([], { status: 500 });
+    }
+}
+
 export async function POST(request: Request) {
     try {
         const formData = await request.formData();
