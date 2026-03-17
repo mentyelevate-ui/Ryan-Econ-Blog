@@ -17,6 +17,7 @@ export default function AdminPage() {
     const [editingPost, setEditingPost] = useState<any | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [imageUploading, setImageUploading] = useState(false);
+    const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
     useEffect(() => {
         const session = localStorage.getItem("admin_session");
@@ -33,10 +34,12 @@ export default function AdminPage() {
 
     const loadPosts = async () => {
         try {
-            const res = await fetch("/api/upload-article");
+            const res = await fetch("/api/upload-article", { cache: "no-store" });
             if (res.ok) {
                 const data = await res.json();
                 setPosts(data);
+            } else {
+                console.error("Failed to load posts", res.status);
             }
         } catch (err) {
             console.error("Failed to load posts", err);
@@ -123,14 +126,20 @@ export default function AdminPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this research piece?")) return;
         try {
-            const res = await fetch(`/api/upload-article?id=${id}`, { method: "DELETE" });
+            const res = await fetch(`/api/upload-article?id=${id}`, { 
+                method: "DELETE",
+                cache: "no-store",
+            });
             if (res.ok) {
-                setPosts(posts.filter(p => p.id !== id));
+                setPosts(prev => prev.filter(p => p.id !== id));
+                setPostToDelete(null);
+            } else {
+                const errorData = await res.json().catch(() => ({ error: "Delete failed" }));
+                alert(`Error: ${errorData.error || "Unknown response from server"}`);
             }
         } catch (err) {
-            alert("Delete failed");
+            alert("Delete failed — check your connection.");
         }
     };
 
@@ -424,7 +433,7 @@ export default function AdminPage() {
                                                     <HiPencilSquare size={18} />
                                                 </button>
                                                 <button 
-                                                    onClick={() => handleDelete(post.id)}
+                                                    onClick={() => setPostToDelete(post.id)}
                                                     className="p-2 text-slate-400 hover:text-crimson-400 hover:bg-crimson-500/10 rounded-lg transition-all"
                                                     title="Delete Post"
                                                 >
@@ -439,6 +448,35 @@ export default function AdminPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Custom Delete Modal */}
+            {postToDelete && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-navy-950/80 backdrop-blur-sm">
+                    <div className="glass-light max-w-sm w-full p-8 border border-white/10 rounded-3xl shadow-2xl">
+                        <div className="w-16 h-16 rounded-full bg-crimson-500/10 flex items-center justify-center text-crimson-400 mb-6 mx-auto">
+                            <HiTrash size={32} />
+                        </div>
+                        <h3 className="text-xl font-display font-bold text-slate-200 text-center mb-2">Delete Research?</h3>
+                        <p className="text-sm text-slate-400 text-center mb-8 leading-relaxed">
+                            This action is permanent and will remove this research piece from the pipeline immediately.
+                        </p>
+                        <div className="flex gap-4">
+                            <button 
+                                onClick={() => setPostToDelete(null)}
+                                className="flex-1 py-3 rounded-xl border border-slate-700 text-slate-400 hover:bg-slate-800 transition-all font-semibold"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={() => handleDelete(postToDelete)}
+                                className="flex-1 py-3 rounded-xl bg-crimson-500 text-white font-bold hover:shadow-[0_0_20px_rgba(239,68,68,0.3)] transition-all"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

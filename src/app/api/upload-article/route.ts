@@ -161,12 +161,15 @@ export async function PUT(request: Request) {
         const body = await request.json();
         const { id, ...updates } = body;
 
+        console.log(`[API] Updating post ${id}`, updates);
+
         if (!id) {
             return NextResponse.json({ error: "Missing post ID" }, { status: 400 });
         }
 
         const mockFilePath = path.join(process.cwd(), "src/lib/mockData/localBlog.json");
         if (!fs.existsSync(mockFilePath)) {
+            console.error(`[API] File not found: ${mockFilePath}`);
             return NextResponse.json({ error: "No posts found" }, { status: 404 });
         }
 
@@ -175,6 +178,7 @@ export async function PUT(request: Request) {
 
         const index = posts.findIndex(p => p.id === id);
         if (index === -1) {
+            console.error(`[API] Post ${id} not found among ${posts.length} posts`);
             return NextResponse.json({ error: "Post not found" }, { status: 404 });
         }
 
@@ -182,6 +186,7 @@ export async function PUT(request: Request) {
         posts[index] = { ...posts[index], ...updates };
 
         fs.writeFileSync(mockFilePath, JSON.stringify(posts, null, 4));
+        console.log(`[API] Successfully updated post ${id}`);
 
         return NextResponse.json({ success: true, post: posts[index] });
     } catch (error) {
@@ -194,6 +199,8 @@ export async function DELETE(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get("id");
+
+        console.log(`[API] Deleting post ${id}`);
 
         if (!id) {
             return NextResponse.json({ error: "Missing post ID" }, { status: 400 });
@@ -210,10 +217,12 @@ export async function DELETE(request: Request) {
         const filteredPosts = posts.filter(p => p.id !== id);
 
         if (filteredPosts.length === posts.length) {
+            console.error(`[API] Could not find post ${id} to delete`);
             return NextResponse.json({ error: "Post not found" }, { status: 404 });
         }
 
         fs.writeFileSync(mockFilePath, JSON.stringify(filteredPosts, null, 4));
+        console.log(`[API] Successfully deleted post ${id}`);
 
         return NextResponse.json({ success: true });
     } catch (error) {
