@@ -8,7 +8,8 @@
         "content": "This is a researcher proposal in PDF format. Please view the embedded document below.",
         "readTime": "1 min read",
         "category": "Research",
-        "pdfUrl": "/uploads/Research_project_Proposal_-_Econometrics.pdf"
+        "pdfUrl": "/uploads/Research_project_Proposal_-_Econometrics.pdf",
+        "imageUrl": "/uploads/default_economic_cover.png"
     },
     {
         "id": "test-pdf-post",

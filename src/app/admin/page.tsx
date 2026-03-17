@@ -144,11 +144,15 @@ export default function AdminPage() {
                 body: JSON.stringify(editingPost),
             });
             if (res.ok) {
+                alert("Changes saved successfully!");
                 setEditingPost(null);
                 await loadPosts();
+            } else {
+                const errorData = await res.json().catch(() => ({ error: "Unknown error" }));
+                alert(`Save failed: ${errorData.error || res.statusText}`);
             }
         } catch (err) {
-            alert("Save failed");
+            alert("Save failed — check your connection and try again.");
         } finally {
             setIsSaving(false);
         }
