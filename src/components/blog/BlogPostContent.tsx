@@ -21,7 +21,10 @@ export default function BlogPostContent({ post }: { post: any }) {
                         alt={post.title}
                         className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/80 to-transparent" />
+                    {/* Global Dark Tint */}
+                    <div className="absolute inset-0 bg-navy-950/40" />
+                    {/* Stronger Bottom-up Gradient Scrim */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/90 to-transparent" />
                 </div>
 
                 <div className="max-w-4xl mx-auto px-6 relative z-10 w-full">
@@ -42,10 +45,10 @@ export default function BlogPostContent({ post }: { post: any }) {
                                 })}
                             </span>
                         </div>
-                        <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-white drop-shadow-sm">
+                        <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-white drop-shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
                             {post.title}
                         </h1>
-                        <p className="text-xl text-slate-300 leading-relaxed max-w-3xl font-light">
+                        <p className="text-xl text-slate-200 leading-relaxed max-w-3xl font-light drop-shadow-md">
                             {post.excerpt}
                         </p>
                     </motion.div>
