@@ -18,6 +18,7 @@ interface BlogPost {
 
 export async function GET() {
     console.log("[API] GET Articles triggered...");
+    console.log("[API] Using Project ID:", client.config().projectId);
     try {
         const query = `*[_type == "post"] | order(publishedAt desc) {
             _id,
