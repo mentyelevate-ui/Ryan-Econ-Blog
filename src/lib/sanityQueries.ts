@@ -124,7 +124,7 @@ export async function getBlogPosts() {
             publishedAt,
             excerpt,
             readTime,
-            category->title,
+            "category": category->title,
             "imageUrl": mainImage.asset->url,
             "pdfUrl": pdfFile.asset->url
         }`;
@@ -154,7 +154,7 @@ export async function getPostBySlug(slug: string) {
             publishedAt,
             excerpt,
             readTime,
-            category->title,
+            "category": category->title,
             "imageUrl": mainImage.asset->url,
             "pdfUrl": pdfFile.asset->url,
             body,

@@ -27,7 +27,7 @@ export async function GET() {
             publishedAt,
             excerpt,
             readTime,
-            category->title,
+            "category": category->title,
             "imageUrl": mainImage.asset->url,
             "pdfUrl": pdfFile.asset->url
         }`;
