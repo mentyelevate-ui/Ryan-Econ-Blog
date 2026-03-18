@@ -40,6 +40,14 @@ function CitationBlock({ block }: { block: ContentBlock }) {
     return <p className="wsj-citation">{block.content}</p>;
 }
 
+function ReferenceBlock({ block }: { block: ContentBlock }) {
+    return (
+        <p className="wsj-citation" style={{ paddingLeft: '2em', textIndent: '-2em', marginBottom: '0.75rem' }}>
+            {block.content}
+        </p>
+    );
+}
+
 function DividerBlock() {
     return (
         <div className="wsj-divider">
@@ -104,6 +112,8 @@ function ArticleBlock({ block }: { block: ContentBlock }) {
             return <EquationBlock block={block} />;
         case "citation":
             return <CitationBlock block={block} />;
+        case "reference":
+            return <ReferenceBlock block={block} />;
         case "divider":
             return <DividerBlock />;
         case "list":

@@ -50,10 +50,100 @@ export async function GET() {
     }
 }
 
+/**
+ * POST — Upload a new article
+ * 
+ * Accepts either:
+ *   1. FormData with a 'file' field (PDF or text file) → auto-extracts text
+ *   2. JSON body with { title, excerpt, nativeContent, category }
+ */
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
-        const { title, excerpt, nativeContent, category: categoryName } = body;
+        const contentType = request.headers.get("content-type") || "";
+        
+        let title = "";
+        let excerpt = "";
+        let nativeContent = "";
+        let categoryName = "";
+        let pdfAssetId: string | undefined;
+
+        if (contentType.includes("multipart/form-data")) {
+            // --- File Upload Mode ---
+            const formData = await request.formData();
+            const file = formData.get("file") as File | null;
+
+            if (!file) {
+                return NextResponse.json({ error: "No file provided" }, { status: 400 });
+            }
+
+            console.log(`[API] Processing file upload: ${file.name} (${file.type}, ${file.size} bytes)`);
+
+            const fileBuffer = Buffer.from(await file.arrayBuffer());
+
+            if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
+                // --- PDF Extraction ---
+                // eslint-disable-next-line @typescript-eslint/no-require-imports
+                const pdfParse = require("pdf-parse");
+                
+                const pdfData = await pdfParse(fileBuffer);
+                nativeContent = pdfData.text || "";
+                
+                // Extract title from first line of PDF text
+                const firstLine = nativeContent.split('\n').find(l => l.trim().length > 5);
+                title = firstLine?.trim() || file.name.replace(/\.pdf$/i, '');
+                
+                // Generate excerpt from first ~200 chars of real content
+                const contentStart = nativeContent
+                    .split('\n')
+                    .filter(l => l.trim().length > 20)
+                    .slice(1, 3)
+                    .join(' ')
+                    .substring(0, 200);
+                excerpt = contentStart.trim() + '...';
+
+                // Also upload the PDF as a Sanity asset for download
+                try {
+                    const pdfAsset = await client.assets.upload('file', fileBuffer, {
+                        filename: file.name,
+                        contentType: 'application/pdf'
+                    });
+                    pdfAssetId = pdfAsset._id;
+                    console.log(`[API] PDF uploaded as Sanity asset: ${pdfAssetId}`);
+                } catch (pdfErr) {
+                    console.warn("[API] PDF asset upload failed, continuing without:", pdfErr);
+                }
+
+                console.log(`[API] Extracted ${nativeContent.length} chars from PDF`);
+
+            } else {
+                // --- Text/Markdown File ---
+                nativeContent = fileBuffer.toString("utf-8");
+                const firstLine = nativeContent.split('\n').find(l => l.trim().length > 5);
+                title = firstLine?.trim() || file.name.replace(/\.\w+$/i, '');
+                
+                const contentStart = nativeContent
+                    .split('\n')
+                    .filter(l => l.trim().length > 20)
+                    .slice(1, 3)
+                    .join(' ')
+                    .substring(0, 200);
+                excerpt = contentStart.trim() + '...';
+            }
+
+            categoryName = "Economic Research";
+
+        } else {
+            // --- JSON Mode (manual creation) ---
+            const body = await request.json();
+            title = body.title || "";
+            excerpt = body.excerpt || "";
+            nativeContent = body.nativeContent || "";
+            categoryName = body.category || "";
+        }
+
+        if (!title) {
+            return NextResponse.json({ error: "Could not determine article title" }, { status: 400 });
+        }
 
         console.log(`[API] Creating new Sanity post: ${title}`);
 
@@ -75,18 +165,27 @@ export async function POST(request: Request) {
 
         // 2. Create the post
         const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
-        const doc = {
+        const doc: any = {
             _type: "post",
             title,
             slug: { _type: "slug", current: slug },
             excerpt: excerpt || "",
+            nativeContent: nativeContent || undefined,
             publishedAt: new Date().toISOString(),
             category: categoryRef,
-            // body: ... we would need to convert markdown to PortableText here for a full implementation
         };
 
+        // Attach PDF file reference if we uploaded one
+        if (pdfAssetId) {
+            doc.pdfFile = {
+                _type: "file",
+                asset: { _type: "reference", _ref: pdfAssetId }
+            };
+        }
+
         const result = await client.create(doc);
-        return NextResponse.json({ success: true, id: result._id });
+        console.log(`[API] Created post: ${result._id}`);
+        return NextResponse.json({ success: true, id: result._id, title });
     } catch (error: any) {
         console.error("[API] POST Error:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
