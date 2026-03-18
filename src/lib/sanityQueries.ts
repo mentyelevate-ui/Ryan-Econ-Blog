@@ -126,7 +126,11 @@ export async function getBlogPosts() {
             readTime,
             "category": category->title,
             "imageUrl": mainImage.asset->url,
-            "pdfUrl": pdfFile.asset->url
+            "pdfUrl": pdfFile.asset->url,
+            nativeContent,
+            body,
+            insight,
+            disclaimer
         }`;
         const data = await client.fetch(query);
 
@@ -158,6 +162,9 @@ export async function getPostBySlug(slug: string) {
             "imageUrl": mainImage.asset->url,
             "pdfUrl": pdfFile.asset->url,
             body,
+            nativeContent,
+            insight,
+            disclaimer,
             videoUrl
         }`;
         const data = await client.fetch(query, { slug });

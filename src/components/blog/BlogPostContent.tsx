@@ -11,7 +11,7 @@ export default function BlogPostContent({ post }: { post: any }) {
     const contentSections = typeof post.content === "string" ? post.content.split("\n\n") : [];
 
     return (
-        <div className="min-h-screen pb-20">
+        <div className="min-h-screen pb-20 pt-20 sm:pt-28">
             {/* Hero Section */}
             <div className="relative h-[50vh] sm:h-[60vh] w-full overflow-hidden flex items-end pb-10 sm:pb-16">
                 {/* Background Image with Overlay */}

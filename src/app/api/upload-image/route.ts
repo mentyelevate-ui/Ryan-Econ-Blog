@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { client } from "@/sanity/lib/client";
 
 export async function POST(request: Request) {
     try {
@@ -11,26 +10,29 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
         }
 
-        // Ensure uploads directory exists
-        const uploadsDir = path.join(process.cwd(), "public", "uploads");
-        if (!fs.existsSync(uploadsDir)) {
-            fs.mkdirSync(uploadsDir, { recursive: true });
-        }
+        console.log(`[API] Uploading image to Sanity asset: ${file.name}`);
 
-        // Sanitize filename
-        const fileName = `cover_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-        const filePath = path.join(uploadsDir, fileName);
-
-        // Save file to disk
+        // Convert File to Buffer for Sanity Upload
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-        fs.writeFileSync(filePath, buffer);
 
-        const url = `/uploads/${fileName}`;
+        // Upload to Sanity
+        const asset = await client.assets.upload("image", buffer, {
+            filename: file.name,
+            contentType: file.type || "image/png",
+        });
 
-        return NextResponse.json({ success: true, url });
-    } catch (error) {
-        console.error("Image Upload Error:", error);
-        return NextResponse.json({ error: "Failed to upload image" }, { status: 500 });
+        // Return the asset URL
+        return NextResponse.json({ 
+            success: true, 
+            url: asset.url,
+            assetId: asset._id
+        });
+    } catch (error: any) {
+        console.error("Sanity Image Upload Error:", error);
+        return NextResponse.json({ 
+            error: "Failed to upload to Sanity", 
+            details: error.message 
+        }, { status: 500 });
     }
 }

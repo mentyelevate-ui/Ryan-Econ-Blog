@@ -53,12 +53,13 @@ export default function AdminPage() {
             const res = await fetch("/api/upload-article", { cache: "no-store" });
             if (res.ok) {
                 const data = await res.json();
-                setPosts(data);
+                console.log(`[Admin] Successfully loaded ${data?.length || 0} posts from Sanity.`);
+                setPosts(Array.isArray(data) ? data : []);
             } else {
-                console.error("Failed to load posts", res.status);
+                console.error("[Admin] Failed to load posts from API", res.status);
             }
         } catch (err) {
-            console.error("Failed to load posts", err);
+            console.error("[Admin] Critical Error in loadPosts:", err);
             setPosts([]);
         }
     };
@@ -124,7 +125,7 @@ export default function AdminPage() {
             };
             reader.readAsDataURL(file);
 
-            // Upload via a simple POST to a dedicated image endpoint or reuse formData
+            // Upload via a simple POST to a dedicated image endpoint
             const imgRes = await fetch("/api/upload-image", {
                 method: "POST",
                 body: formData,
@@ -132,7 +133,11 @@ export default function AdminPage() {
             
             if (imgRes.ok) {
                 const data = await imgRes.json();
-                setEditingPost((prev: any) => ({ ...prev, imageUrl: data.url }));
+                setEditingPost((prev: any) => ({ 
+                    ...prev, 
+                    imageUrl: data.url,
+                    mainImageAssetId: data.assetId 
+                }));
             }
         } catch (err) {
             console.error("Image upload failed", err);
@@ -195,6 +200,8 @@ export default function AdminPage() {
                 body: JSON.stringify(editingPost),
             });
             if (res.ok) {
+                const data = await res.json();
+                console.log("[Admin] Save success:", data);
                 alert("Changes saved successfully!");
                 setEditingPost(null);
                 await loadPosts();
@@ -392,6 +399,7 @@ export default function AdminPage() {
                         <h1 className="font-display text-4xl font-bold mb-2 text-white">Pipeline Admin Portal</h1>
                         <p className="text-slate-400 max-w-xl">
                             Manage your research papers, upload new memos, and refine your portfolio data with precision.
+                            <span className="text-[10px] opacity-20 ml-2">v1.1.5-live</span>
                         </p>
                     </div>
                     <button 

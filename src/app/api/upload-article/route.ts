@@ -29,7 +29,11 @@ export async function GET() {
             readTime,
             "category": category->title,
             "imageUrl": mainImage.asset->url,
-            "pdfUrl": pdfFile.asset->url
+            "pdfUrl": pdfFile.asset->url,
+            nativeContent,
+            body,
+            insight,
+            disclaimer
         }`;
         const data = await client.fetch(query);
         console.log(`[API] Found ${data?.length || 0} articles in Sanity.`);
@@ -92,7 +96,16 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
     try {
         const body = await request.json();
-        const { id, title, excerpt, category: categoryName, imageUrl, disclaimer, insight, nativeContent } = body;
+        const { 
+            id, 
+            title, 
+            excerpt, 
+            category: categoryName, 
+            mainImageAssetId,
+            disclaimer, 
+            insight, 
+            nativeContent 
+        } = body;
 
         console.log(`[API] Attempting to update Sanity document: ${id}`);
 
@@ -104,6 +117,9 @@ export async function PUT(request: Request) {
         const patch: any = {};
         if (title) patch.title = title;
         if (excerpt !== undefined) patch.excerpt = excerpt;
+        if (insight !== undefined) patch.insight = insight;
+        if (disclaimer !== undefined) patch.disclaimer = disclaimer;
+        if (nativeContent !== undefined) patch.nativeContent = nativeContent;
         
         // Handle Category Reference if updated
         if (categoryName) {
@@ -118,6 +134,14 @@ export async function PUT(request: Request) {
                 catId = newCat._id;
             }
             patch.category = { _type: "reference", _ref: catId };
+        }
+
+        // Handle Image Asset Reference if updated
+        if (mainImageAssetId) {
+            patch.mainImage = {
+                _type: "image",
+                asset: { _type: "reference", _ref: mainImageAssetId }
+            };
         }
 
         // Update the document
