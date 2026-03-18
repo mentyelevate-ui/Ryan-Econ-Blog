@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { client } from "@/sanity/lib/client";
 
+export const dynamic = "force-dynamic";
+
 // Define the expected BlogPost interface for type safety
 interface BlogPost {
     id: string;
