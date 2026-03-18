@@ -5,25 +5,135 @@ import Link from "next/link";
 import { HiArrowLeft } from "react-icons/hi2";
 import StickyVideoPlayer from "@/components/blog/StickyVideoPlayer";
 import { PortableText } from "@portabletext/react";
+import { parseArticleContent, type ContentBlock } from "@/lib/articleParser";
+
+// ====================================================================
+// WSJ-GRADE ARTICLE RENDERER
+// Each content block type gets a dedicated rendering component.
+// ====================================================================
+
+function HeadingBlock({ block }: { block: ContentBlock }) {
+    return <h2 className="wsj-section-heading">{block.content}</h2>;
+}
+
+function SubheadingBlock({ block }: { block: ContentBlock }) {
+    return <h3 className="wsj-subheading">{block.content}</h3>;
+}
+
+function LedeBlock({ block }: { block: ContentBlock }) {
+    return <p className="wsj-lede wsj-drop-cap">{block.content}</p>;
+}
+
+function ParagraphBlock({ block }: { block: ContentBlock }) {
+    return <p className="wsj-paragraph">{block.content}</p>;
+}
+
+function PullQuoteBlock({ block }: { block: ContentBlock }) {
+    return <blockquote className="wsj-pull-quote">{block.content}</blockquote>;
+}
+
+function EquationBlock({ block }: { block: ContentBlock }) {
+    return <div className="wsj-equation">{block.content}</div>;
+}
+
+function CitationBlock({ block }: { block: ContentBlock }) {
+    return <p className="wsj-citation">{block.content}</p>;
+}
+
+function DividerBlock() {
+    return (
+        <div className="wsj-divider">
+            <span className="wsj-divider-ornament">◆</span>
+        </div>
+    );
+}
+
+function ListBlock({ block }: { block: ContentBlock }) {
+    return (
+        <ul className="wsj-list">
+            {(block.items || []).map((item, idx) => (
+                <li key={idx}>{item}</li>
+            ))}
+        </ul>
+    );
+}
+
+function TableBlock({ block }: { block: ContentBlock }) {
+    return (
+        <div className="wsj-table-container">
+            <table className="wsj-table">
+                {block.headers && block.headers.length > 0 && (
+                    <thead>
+                        <tr>
+                            {block.headers.map((h, idx) => (
+                                <th key={idx}>{h}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                )}
+                {block.rows && block.rows.length > 0 && (
+                    <tbody>
+                        {block.rows.map((row, idx) => (
+                            <tr key={idx}>
+                                {row.map((cell, cidx) => (
+                                    <td key={cidx}>{cell}</td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                )}
+            </table>
+        </div>
+    );
+}
+
+// --- Block Renderer Dispatch ---
+function ArticleBlock({ block }: { block: ContentBlock }) {
+    switch (block.type) {
+        case "heading":
+            return <HeadingBlock block={block} />;
+        case "subheading":
+            return <SubheadingBlock block={block} />;
+        case "lede":
+            return <LedeBlock block={block} />;
+        case "paragraph":
+            return <ParagraphBlock block={block} />;
+        case "pull-quote":
+            return <PullQuoteBlock block={block} />;
+        case "equation":
+            return <EquationBlock block={block} />;
+        case "citation":
+            return <CitationBlock block={block} />;
+        case "divider":
+            return <DividerBlock />;
+        case "list":
+            return <ListBlock block={block} />;
+        case "table":
+            return <TableBlock block={block} />;
+        default:
+            return <p className="wsj-paragraph">{block.content}</p>;
+    }
+}
+
+// ====================================================================
+// MAIN COMPONENT
+// ====================================================================
 
 export default function BlogPostContent({ post }: { post: any }) {
-    // Split content by double newlines to create paragraph-like sections if using the legacy string fallback
     const contentSections = typeof post.content === "string" ? post.content.split("\n\n") : [];
+    const parsedBlocks = post.nativeContent ? parseArticleContent(post.nativeContent) : [];
 
     return (
         <div className="min-h-screen pb-20 pt-20 sm:pt-28">
             {/* Hero Section */}
             <div className="relative h-[50vh] sm:h-[60vh] w-full overflow-hidden flex items-end pb-10 sm:pb-16">
-                {/* Background Image with Overlay */}
                 <div className="absolute inset-0 z-0">
                     <img 
                         src={post.imageUrl || "/uploads/default_economic_cover.png"} 
                         alt={post.title}
                         className="w-full h-full object-cover"
                     />
-                    {/* Strong Global Dark Tint */}
                     <div className="absolute inset-0 bg-navy-950/60" />
-                    {/* Multi-stage Scrim for maximum legibility */}
                     <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/40 to-transparent" />
                     <div className="absolute inset-0 bg-gradient-to-b from-navy-950/40 via-transparent to-transparent" />
                 </div>
@@ -35,7 +145,6 @@ export default function BlogPostContent({ post }: { post: any }) {
                         transition={{ duration: 0.8 }}
                         className="glass p-8 sm:p-12 rounded-[2rem] border border-white/10 backdrop-blur-xl bg-navy-950/20 shadow-2xl relative overflow-hidden"
                     >
-                        {/* Decorative internal glow */}
                         <div className="absolute -top-24 -right-24 w-48 h-48 bg-gold-500/10 rounded-full blur-3xl" />
                         
                         <div className="relative z-10">
@@ -79,7 +188,7 @@ export default function BlogPostContent({ post }: { post: any }) {
                     </Link>
                 </motion.div>
 
-                {/* Author's Insight (Personal/Informal) */}
+                {/* Author's Insight */}
                 {post.insight && (
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
@@ -95,7 +204,7 @@ export default function BlogPostContent({ post }: { post: any }) {
                             </p>
                             <div className="mt-4 flex items-center gap-2">
                                 <div className="w-6 h-px bg-slate-700" />
-                                <span className="text-[10px] text-slate-500 font-medium italic">Author's Note</span>
+                                <span className="text-[10px] text-slate-500 font-medium italic">Author&apos;s Note</span>
                             </div>
                         </div>
                     </motion.div>
@@ -121,7 +230,7 @@ export default function BlogPostContent({ post }: { post: any }) {
                     </motion.div>
                 )}
 
-                {/* Video (if present) */}
+                {/* Video */}
                 {post.videoUrl && (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -133,27 +242,20 @@ export default function BlogPostContent({ post }: { post: any }) {
                     </motion.div>
                 )}
 
-                {/* Article Content */}
+                {/* ========== ARTICLE CONTENT ========== */}
                 <motion.article
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.4 }}
-                    className="prose-custom prose-lg max-w-none text-slate-300"
                 >
-                    {/* Conditional Rendering: Native Content (Preferred) vs PDF Fallback */}
-                    {post.nativeContent ? (
-                        <div className="mb-16 space-y-8">
-                            <div className="flex items-center gap-4 mb-8">
-                                <span className="w-8 h-[1px] bg-gold-500/30" />
-                                <span className="text-xs font-semibold text-gold-400 uppercase tracking-widest">Full Research Piece</span>
-                                <span className="flex-1 h-[1px] bg-gold-500/30" />
-                            </div>
-                            <div className="native-research-content text-slate-200 leading-[1.8] font-light space-y-6">
-                                {(post.nativeContent || "").split('\n\n').filter((p: string) => p.trim()).map((para: string, idx: number) => (
-                                    <p key={idx} className="first-letter:text-3xl first-letter:font-bold first-letter:text-gold-400 first-letter:float-left first-letter:mr-2 first-letter:mt-1">{para}</p>
-                                ))}
-                            </div>
-                            
+                    {/* Priority 1: Parsed Native Content (WSJ-style) */}
+                    {parsedBlocks.length > 0 ? (
+                        <div className="wsj-article">
+                            {parsedBlocks.map((block, idx) => (
+                                <ArticleBlock key={idx} block={block} />
+                            ))}
+
+                            {/* PDF Download Card (if available alongside native content) */}
                             {post.pdfUrl && (
                                 <div className="mt-12 p-6 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between">
                                     <div className="flex items-center gap-4">
@@ -163,22 +265,28 @@ export default function BlogPostContent({ post }: { post: any }) {
                                             </svg>
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-slate-200">Original Research Paper (PDF)</p>
-                                            <p className="text-xs text-slate-500">View source document for charts & citations</p>
+                                            <p className="text-sm font-bold text-slate-200" style={{ fontFamily: 'var(--font-sans)' }}>Original Research Paper (PDF)</p>
+                                            <p className="text-xs text-slate-500" style={{ fontFamily: 'var(--font-sans)' }}>View source document for charts & citations</p>
                                         </div>
                                     </div>
                                     <a 
                                         href={post.pdfUrl} 
                                         download 
                                         className="px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-xs font-bold hover:bg-gold-500 hover:text-navy-950 transition-all"
+                                        style={{ fontFamily: 'var(--font-sans)' }}
                                     >
                                         Download PDF
                                     </a>
                                 </div>
                             )}
+
+                            {/* Byline */}
+                            <div className="wsj-byline">
+                                By Ryan Renfro · {new Date(post.publishedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                            </div>
                         </div>
                     ) : post.pdfUrl ? (
-                        /* Fallback to PDF Viewer if no native content */
+                        /* Fallback: PDF Viewer */
                         <div className="mb-12">
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="text-xl font-display font-bold text-slate-200 m-0">Document Viewer</h2>
@@ -196,129 +304,39 @@ export default function BlogPostContent({ post }: { post: any }) {
                             <div className="aspect-[4/5] sm:aspect-video w-full glass rounded-2xl border border-slate-700/50 overflow-hidden shadow-2xl">
                                 <iframe 
                                     src={`${post.pdfUrl}#toolbar=0`} 
-                                    className="w-full h-full border-none scale-100 sm:scale-100"
+                                    className="w-full h-full border-none"
                                     title={post.title}
                                 />
                             </div>
                         </div>
                     ) : null}
 
-                    {/* Rich Text / Portable Text Rendering */}
-                    {post.body ? (
-                        <div className="mt-12 portable-text-container">
+                    {/* Portable Text (Sanity Rich Text) */}
+                    {post.body && (
+                        <div className="wsj-article mt-12">
                             <PortableText value={post.body} />
                         </div>
-                    ) : (
-                        contentSections.map((section: string, i: number) => {
-                            const trimmed = section.trim();
+                    )}
 
-                            // Heading (## )
-                            if (trimmed.startsWith("## ")) {
-                                return (
-                                    <h2
-                                        key={i}
-                                        className="font-display text-2xl font-bold text-foreground mt-10 mb-4"
-                                    >
-                                        {trimmed.replace("## ", "")}
-                                    </h2>
-                                );
-                            }
+                    {/* Legacy Markdown Fallback */}
+                    {!parsedBlocks.length && !post.pdfUrl && !post.body && contentSections.length > 0 && (
+                        <div className="wsj-article">
+                            {contentSections.map((section: string, i: number) => {
+                                const trimmed = section.trim();
+                                if (!trimmed) return null;
 
-                            // Heading (### )
-                            if (trimmed.startsWith("### ")) {
-                                return (
-                                    <h3
-                                        key={i}
-                                        className="font-semibold text-lg text-foreground mt-8 mb-3"
-                                    >
-                                        {trimmed.replace("### ", "")}
-                                    </h3>
-                                );
-                            }
-
-                            // Numbered/bullet list
-                            if (
-                                trimmed.match(/^(\d+\.\s|\-\s)/) ||
-                                trimmed.includes("\n- ") ||
-                                trimmed.includes("\n1.")
-                            ) {
-                                const lines = trimmed.split("\n");
-                                return (
-                                    <ul key={i} className="space-y-2 my-4 ml-4">
-                                        {lines
-                                            .filter((l) => l.trim())
-                                            .map((line, j) => {
-                                                const cleaned = line
-                                                    .replace(/^\d+\.\s/, "")
-                                                    .replace(/^-\s/, "");
-                                                return (
-                                                    <li
-                                                        key={j}
-                                                        className="text-slate-300 leading-relaxed pl-2 border-l-2 border-gold-500/20"
-                                                    >
-                                                        <span
-                                                            dangerouslySetInnerHTML={{
-                                                                __html: cleaned.replace(
-                                                                    /\*\*(.*?)\*\*/g,
-                                                                    '<strong class="text-foreground font-semibold">$1</strong>'
-                                                                ),
-                                                            }}
-                                                        />
-                                                    </li>
-                                                );
-                                            })}
-                                    </ul>
-                                );
-                            }
-
-                            // Markdown Table (| Header |)
-                            if (trimmed.startsWith("|") && (trimmed.includes("\n|") || trimmed.includes("\r\n|"))) {
-                                const rows = trimmed.split(/\r?\n/).filter(r => r.trim());
-                                if (rows.length < 2) return null; // Need at least header and separator or content
-
-                                const headerRow = rows[0].split("|").filter((_, idx, arr) => idx > 0 && idx < arr.length - 1).map(s => s.trim());
-                                const bodyRows = rows.slice(2).map(row =>
-                                    row.split("|").filter((_, idx, arr) => idx > 0 && idx < arr.length - 1).map(s => s.trim())
-                                );
-
-                                return (
-                                    <div key={i} className="my-10 overflow-x-auto glass rounded-2xl border border-slate-700/40">
-                                        <table className="w-full text-sm text-left">
-                                            <thead className="text-xs uppercase tracking-wider text-gold-400 bg-navy-900/50">
-                                                <tr>
-                                                    {headerRow.map((h, idx) => (
-                                                        <th key={idx} className="px-6 py-4 font-bold border-b border-slate-700/50">{h}</th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-700/30">
-                                                {bodyRows.map((row, idx) => (
-                                                    <tr key={idx} className="hover:bg-white/5 transition-colors">
-                                                        {row.map((cell, cidx) => (
-                                                            <td key={cidx} className="px-6 py-4 text-slate-300 border-r last:border-r-0 border-slate-700/20">{cell}</td>
-                                                        ))}
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                );
-                            }
-
-                            // Regular paragraph
-                            return (
-                                <p
-                                    key={i}
-                                    className="text-slate-300 leading-relaxed mb-4"
-                                    dangerouslySetInnerHTML={{
-                                        __html: trimmed.replace(
-                                            /\*\*(.*?)\*\*/g,
-                                            '<strong class="text-foreground font-semibold">$1</strong>'
-                                        ),
-                                    }}
-                                />
-                            );
-                        })
+                                if (trimmed.startsWith("## ")) {
+                                    return <h2 key={i} className="wsj-section-heading">{trimmed.replace("## ", "")}</h2>;
+                                }
+                                if (trimmed.startsWith("### ")) {
+                                    return <h3 key={i} className="wsj-subheading">{trimmed.replace("### ", "")}</h3>;
+                                }
+                                if (i === 0) {
+                                    return <p key={i} className="wsj-lede wsj-drop-cap">{trimmed}</p>;
+                                }
+                                return <p key={i} className="wsj-paragraph">{trimmed}</p>;
+                            })}
+                        </div>
                     )}
                 </motion.article>
             </div>

@@ -171,6 +171,27 @@ const post = {
                 },
             ],
         },
+        {
+            name: "nativeContent",
+            title: "Native Content (Plain Text)",
+            type: "text",
+            rows: 20,
+            description: "Full article text extracted from PDF or pasted manually. Parsed automatically into headings, paragraphs, equations, etc.",
+        },
+        {
+            name: "insight",
+            title: "Author's Insight",
+            type: "text",
+            rows: 3,
+            description: "A personal, informal note from the author about this research piece.",
+        },
+        {
+            name: "disclaimer",
+            title: "Research Disclaimer",
+            type: "text",
+            rows: 3,
+            description: "Scope and intent disclaimer for the research paper.",
+        },
     ],
     orderings: [
         {
