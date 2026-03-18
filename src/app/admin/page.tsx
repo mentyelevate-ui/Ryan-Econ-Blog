@@ -34,6 +34,7 @@ export default function AdminPage() {
     // Resume states
     const [resumeStatus, setResumeStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
     const [resumeStats, setResumeStats] = useState<{ name: string } | null>(null);
+    const [resumeUrl, setResumeUrl] = useState<string>("/resume.pdf");
 
     useEffect(() => {
         const session = localStorage.getItem("admin_session");
@@ -179,8 +180,10 @@ export default function AdminPage() {
             });
 
             if (res.ok) {
+                const data = await res.json();
                 setResumeStats({ name: file.name });
                 setResumeStatus("success");
+                if (data.url) setResumeUrl(data.url);
                 setTimeout(() => setResumeStatus("idle"), 5000);
             } else {
                 setResumeStatus("error");
@@ -504,7 +507,7 @@ export default function AdminPage() {
                                         <span className="text-[10px] text-slate-400 font-medium">resume.pdf</span>
                                     </div>
                                     <a 
-                                        href="/resume.pdf" 
+                                        href={resumeUrl} 
                                         target="_blank" 
                                         className="text-[9px] font-bold uppercase tracking-widest text-gold-400 hover:text-gold-300 transition-colors"
                                     >

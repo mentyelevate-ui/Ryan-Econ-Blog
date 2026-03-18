@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { createClient } from '@sanity/client';
+
+const sanityClient = createClient({
+    projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
+    dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
+    token: process.env.SANITY_API_TOKEN,
+    apiVersion: '2024-01-01',
+    useCdn: false,
+});
 
 export async function POST(request: NextRequest) {
     try {
@@ -11,24 +18,51 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
         }
 
-        // Validate file type (should be PDF)
         if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
             return NextResponse.json({ error: "Only PDF files are allowed" }, { status: 400 });
         }
 
         const buffer = Buffer.from(await file.arrayBuffer());
-        
-        // Define the target path in the public directory
-        const publicPath = path.join(process.cwd(), 'public', 'resume.pdf');
 
-        // Write the file, overwriting the existing one
-        fs.writeFileSync(publicPath, buffer);
+        // Upload to Sanity as an asset
+        const asset = await sanityClient.assets.upload('file', buffer, {
+            filename: 'resume.pdf',
+            contentType: 'application/pdf',
+        });
 
-        console.log(`[API] Resume updated at ${publicPath}`);
+        // Store the resume URL in a singleton document
+        const resumeDoc = {
+            _id: 'siteResume',
+            _type: 'siteSettings',
+            resumeUrl: asset.url,
+            resumeAssetId: asset._id,
+            updatedAt: new Date().toISOString(),
+        };
 
-        return NextResponse.json({ success: true, message: "Resume updated successfully" });
-    } catch (error) {
-        console.error("Resume Upload Error:", error);
-        return NextResponse.json({ error: "Failed to upload resume" }, { status: 500 });
+        await sanityClient.createOrReplace(resumeDoc);
+
+        console.log(`[API] Resume uploaded to Sanity: ${asset.url}`);
+
+        return NextResponse.json({ 
+            success: true, 
+            message: "Resume updated successfully",
+            url: asset.url,
+        });
+    } catch (error: any) {
+        console.error("Resume Upload Error:", error?.message || error);
+        return NextResponse.json({ error: "Failed to upload resume. Check Sanity credentials." }, { status: 500 });
+    }
+}
+
+export async function GET() {
+    try {
+        const doc = await sanityClient.fetch(`*[_id == "siteResume"][0]{ resumeUrl, updatedAt }`);
+        if (doc?.resumeUrl) {
+            return NextResponse.json({ url: doc.resumeUrl, updatedAt: doc.updatedAt });
+        }
+        // Fallback to local file
+        return NextResponse.json({ url: '/resume.pdf', updatedAt: null });
+    } catch {
+        return NextResponse.json({ url: '/resume.pdf', updatedAt: null });
     }
 }

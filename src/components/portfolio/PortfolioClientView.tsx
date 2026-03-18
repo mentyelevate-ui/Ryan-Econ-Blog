@@ -139,6 +139,46 @@ export default function PortfolioClientView() {
                 )}
             </motion.div>
 
+            {/* Investment Philosophy & Goals */}
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+                className="glass rounded-2xl p-6 mb-8"
+            >
+                <div className="flex flex-col sm:flex-row sm:items-start gap-6">
+                    <div className="flex-1">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-2">
+                            Investment Philosophy
+                        </h3>
+                        <p className="text-sm text-slate-300 leading-relaxed">
+                            {(client as any).investmentPhilosophy || client.strategy}
+                        </p>
+                    </div>
+                    <div className="sm:w-72 shrink-0">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-2">
+                            Goals
+                        </h3>
+                        <div className="space-y-2">
+                            {client.goals.map((goal, i) => (
+                                <div key={i} className="flex items-center justify-between">
+                                    <span className="text-xs text-slate-400">{goal.label}</span>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-16 h-1.5 rounded-full bg-navy-800 overflow-hidden">
+                                            <div
+                                                className="h-full rounded-full bg-gold-400"
+                                                style={{ width: `${goal.progress}%` }}
+                                            />
+                                        </div>
+                                        <span className="text-[10px] text-slate-500 tabular-nums w-8 text-right">{goal.progress}%</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+
             {/* Tab Navigation */}
             <div className="flex flex-wrap gap-2 mb-8">
                 {tabs.map((tab) => (
