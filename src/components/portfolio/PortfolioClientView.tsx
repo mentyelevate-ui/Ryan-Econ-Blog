@@ -57,7 +57,7 @@ export default function PortfolioClientView() {
 
     const totalValue = liveHoldings.reduce((s, h) => s + h.currentPrice * h.shares, 0);
     const totalCost = liveHoldings.reduce((s, h) => s + h.costBasis * h.shares, 0);
-    const totalReturn = ((totalValue - totalCost) / totalCost) * 100;
+    const totalReturn = totalCost > 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0;
     const totalGainLoss = totalValue - totalCost;
 
     const allocationData = liveHoldings.reduce((acc, h) => {
