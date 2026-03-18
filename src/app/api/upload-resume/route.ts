@@ -1,13 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@sanity/client';
-
-const sanityClient = createClient({
-    projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
-    dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
-    token: process.env.SANITY_API_TOKEN,
-    apiVersion: '2024-01-01',
-    useCdn: false,
-});
+import { client as sanityClient } from '@/sanity/lib/client';
 
 export async function POST(request: NextRequest) {
     try {

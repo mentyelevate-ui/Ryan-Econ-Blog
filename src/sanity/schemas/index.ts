@@ -12,5 +12,6 @@
 import holding from "./holding";
 import post from "./post";
 import category from "./category";
+import siteSettings from "./siteSettings";
 
-export const schemaTypes = [holding, post, category];
+export const schemaTypes = [holding, post, category, siteSettings];

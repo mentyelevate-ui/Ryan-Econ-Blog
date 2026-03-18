@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { HiArrowRight, HiArrowDown } from "react-icons/hi2";
 import Image from "next/image";
+import { useState, useEffect } from "react";
 
 export default function HomeAboutPreview() {
     return (
@@ -42,14 +43,7 @@ export default function HomeAboutPreview() {
                                 More About Me
                                 <HiArrowRight className="transition-transform group-hover:translate-x-1" />
                             </Link>
-                            <a
-                                href="/resume.pdf"
-                                download="Ryan_Renfro_Resume.pdf"
-                                className="group flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-full bg-gold-500/10 text-gold-400 border border-gold-500/20 hover:bg-gold-500/20 transition-all duration-300"
-                            >
-                                Résumé
-                                <HiArrowDown className="transition-transform group-hover:translate-y-0.5" />
-                            </a>
+                            <ResumeLink />
                         </div>
                     </motion.div>
 
@@ -110,5 +104,36 @@ export default function HomeAboutPreview() {
                 </div>
             </div>
         </section>
+    );
+}
+
+function ResumeLink() {
+    const [resumeUrl, setResumeUrl] = useState("/resume.pdf");
+
+    useEffect(() => {
+        async function fetchResume() {
+            try {
+                const res = await fetch("/api/upload-resume");
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.url) setResumeUrl(data.url);
+                }
+            } catch {
+                // use fallback
+            }
+        }
+        fetchResume();
+    }, []);
+
+    return (
+        <a
+            href={resumeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-full bg-gold-500/10 text-gold-400 border border-gold-500/20 hover:bg-gold-500/20 transition-all duration-300"
+        >
+            Résumé
+            <HiArrowDown className="transition-transform group-hover:translate-y-0.5" />
+        </a>
     );
 }

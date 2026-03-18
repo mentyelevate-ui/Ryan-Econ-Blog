@@ -11,7 +11,7 @@ import {
     HiCodeBracket,
     HiBookOpen,
 } from "react-icons/hi2";
-
+import { useState, useEffect } from "react";
 const highlights = [
     {
         icon: HiAcademicCap,
@@ -41,6 +41,23 @@ const interests = [
 ];
 
 export default function AboutPage() {
+    const [resumeUrl, setResumeUrl] = useState("/resume.pdf");
+
+    useEffect(() => {
+        async function fetchResume() {
+            try {
+                const res = await fetch("/api/upload-resume");
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.url) setResumeUrl(data.url);
+                }
+            } catch {
+                // use fallback
+            }
+        }
+        fetchResume();
+    }, []);
+
     return (
         <div className="min-h-screen pt-28 pb-20">
             <div className="max-w-7xl mx-auto px-6">
@@ -118,11 +135,12 @@ export default function AboutPage() {
                         {/* CTAs */}
                         <div id="resume" className="flex flex-wrap gap-3">
                             <a
-                                href="/resume.pdf"
-                                download="Ryan_Renfro_Resume.pdf"
+                                href={resumeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="group flex items-center gap-2 px-7 py-3 text-sm font-semibold rounded-full bg-gradient-to-r from-gold-500 to-gold-400 text-navy-900 hover:shadow-lg hover:shadow-gold-500/20 transition-all duration-300"
                             >
-                                Download Résumé
+                                View Résumé
                                 <HiArrowDown className="transition-transform group-hover:translate-y-0.5" />
                             </a>
                             <a
