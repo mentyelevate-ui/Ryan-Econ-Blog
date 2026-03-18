@@ -15,6 +15,7 @@ interface BlogPost {
 }
 
 export async function GET() {
+    console.log("[API] GET Articles triggered...");
     try {
         const query = `*[_type == "post"] | order(publishedAt desc) {
             _id,
@@ -28,6 +29,7 @@ export async function GET() {
             "pdfUrl": pdfFile.asset->url
         }`;
         const data = await client.fetch(query);
+        console.log(`[API] Found ${data?.length || 0} articles in Sanity.`);
         
         const posts = data.map((item: any) => ({
             ...item,
@@ -35,9 +37,9 @@ export async function GET() {
         }));
 
         return NextResponse.json(posts);
-    } catch (error) {
+    } catch (error: any) {
         console.error("[API] GET Error:", error);
-        return NextResponse.json([], { status: 500 });
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
 
