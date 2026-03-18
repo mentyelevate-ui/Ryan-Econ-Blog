@@ -23,16 +23,37 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
-  title: "Ryan Renfro | Economics Student & Market Researcher",
+  title: "Ryan Renfro | Economics & Market Research",
   description:
-    "An open notebook by Ryan Renfro — economics student tracking mock portfolios, writing research notes, and building software. Learning in public.",
-  keywords: [
-    "economics student",
-    "mock portfolio",
-    "macro research",
-    "commercial banking",
-    "paper trading",
-  ],
+    "Open notebook by Ryan Renfro — documenting macro research, tracking mock portfolios, and building software for wealth advisory.",
+  keywords: ["economics", "market research", "portfolio management", "wealth advisory"],
+  openGraph: {
+    title: "Ryan Renfro | Economics & Market Research",
+    description: "An open notebook documenting macro research, simulated portfolios, and software engineering.",
+    url: "https://renfrocapital.com",
+    siteName: "Ryan Renfro",
+    images: [
+      {
+        url: "/sharing-card.png",
+        width: 1200,
+        height: 630,
+        alt: "Ryan Renfro Economics & Market Research",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ryan Renfro | Economics & Market Research",
+    description: "Documenting macro research, simulated portfolios, and software engineering.",
+    images: ["/sharing-card.png"],
+  },
+  icons: {
+    icon: "/favicon-rr.png",
+    shortcut: "/favicon-rr.png",
+    apple: "/favicon-rr.png",
+  },
 };
 
 export default function RootLayout({

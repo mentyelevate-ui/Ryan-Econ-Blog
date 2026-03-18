@@ -27,7 +27,15 @@ export async function GET(request: Request) {
     }
 
     try {
-        const symbols = tickers.join(",");
+        // Yahoo Finance uses hyphens (BRK-B) while portfolio data uses dots (BRK.B)
+        const tickerMap: Record<string, string> = {}; // yahooTicker -> originalTicker
+        const yahooTickers = tickers.map(t => {
+            const yahoo = t.replace(".", "-");
+            tickerMap[yahoo] = t;
+            return yahoo;
+        });
+
+        const symbols = yahooTickers.join(",");
         const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols}&fields=regularMarketPrice,regularMarketChange,regularMarketChangePercent,regularMarketPreviousClose,regularMarketDayHigh,regularMarketDayLow,regularMarketVolume`;
 
         const response = await fetch(url, {
@@ -56,7 +64,9 @@ export async function GET(request: Request) {
         }> = {};
 
         for (const quote of quotes) {
-            result[quote.symbol] = {
+            // Map back to original ticker format (BRK-B -> BRK.B)
+            const originalTicker = tickerMap[quote.symbol] || quote.symbol;
+            result[originalTicker] = {
                 price: quote.regularMarketPrice ?? 0,
                 change: quote.regularMarketChange ?? 0,
                 changePercent: quote.regularMarketChangePercent ?? 0,

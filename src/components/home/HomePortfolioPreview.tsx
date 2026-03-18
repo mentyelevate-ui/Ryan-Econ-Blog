@@ -5,6 +5,8 @@ import Link from "next/link";
 import { HiArrowRight, HiUserGroup } from "react-icons/hi2";
 import { clients, clientPortfolios } from "@/lib/mockData/clientData";
 
+import { useState, useEffect } from "react";
+
 const riskBadge: Record<string, string> = {
     Conservative: "bg-sky-500/10 text-sky-400 border-sky-500/20",
     Moderate: "bg-gold-500/10 text-gold-400 border-gold-500/20",
@@ -12,6 +14,27 @@ const riskBadge: Record<string, string> = {
 };
 
 export default function HomePortfolioPreview() {
+    const [livePrices, setLivePrices] = useState<Record<string, { price: number }>>({});
+
+    useEffect(() => {
+        async function fetchAllPrices() {
+            const allTickers = Array.from(new Set(
+                clients.flatMap(c => clientPortfolios[c.id].holdings.map(h => h.ticker))
+            )).join(",");
+            
+            try {
+                const res = await fetch(`/api/stock-prices?tickers=${allTickers}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setLivePrices(data);
+                }
+            } catch (err) {
+                console.error("HomePortfolioPreview: Failed to fetch prices", err);
+            }
+        }
+        fetchAllPrices();
+    }, []);
+
     return (
         <section className="section-padding">
             <div className="max-w-7xl mx-auto px-6">
@@ -49,9 +72,15 @@ export default function HomePortfolioPreview() {
                     {clients.map((client, i) => {
                         const portfolio = clientPortfolios[client.id];
                         const holdings = portfolio.holdings;
-                        const totalValue = holdings.reduce((s, h) => s + h.currentPrice * h.shares, 0);
+                        
+                        // Use live prices if available, otherwise fallback to cost basis (0% return)
+                        const totalValue = holdings.reduce((s, h) => {
+                            const price = livePrices[h.ticker]?.price || h.costBasis;
+                            return s + price * h.shares;
+                        }, 0);
+                        
                         const totalCost = holdings.reduce((s, h) => s + h.costBasis * h.shares, 0);
-                        const totalReturn = ((totalValue - totalCost) / totalCost) * 100;
+                        const totalReturn = totalCost > 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0;
 
                         return (
                             <motion.div

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { HiOutlineBars3, HiXMark } from "react-icons/hi2";
+import Image from "next/image";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -32,8 +33,8 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gold-500 to-gold-300 flex items-center justify-center font-bold text-navy-900 text-sm transition-transform group-hover:scale-110">
-            RR
+          <div className="w-8 h-8 rounded-lg overflow-hidden transition-transform group-hover:scale-110 relative">
+            <Image src="/favicon-rr.png" alt="RR Logo" fill className="object-cover" />
           </div>
           <span className="font-display text-lg font-semibold tracking-tight text-foreground">
             Ryan Renfro
