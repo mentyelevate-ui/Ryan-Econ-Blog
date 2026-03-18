@@ -161,15 +161,17 @@ export async function PUT(request: Request) {
         const body = await request.json();
         const { id, ...updates } = body;
 
-        console.log(`[API] Updating post ${id}`, updates);
+        console.log(`[API] Attempting to update post: ${id}`);
+        console.log(`[API] Updates received:`, updates);
 
         if (!id) {
+            console.error("[API] Error: Missing post ID");
             return NextResponse.json({ error: "Missing post ID" }, { status: 400 });
         }
 
         const mockFilePath = path.join(process.cwd(), "src/lib/mockData/localBlog.json");
         if (!fs.existsSync(mockFilePath)) {
-            console.error(`[API] File not found: ${mockFilePath}`);
+            console.error(`[API] Error: Local blog file not found at ${mockFilePath}`);
             return NextResponse.json({ error: "No posts found" }, { status: 404 });
         }
 
@@ -178,7 +180,7 @@ export async function PUT(request: Request) {
 
         const index = posts.findIndex(p => p.id === id);
         if (index === -1) {
-            console.error(`[API] Post ${id} not found among ${posts.length} posts`);
+            console.error(`[API] Error: Post ID ${id} not found in local data`);
             return NextResponse.json({ error: "Post not found" }, { status: 404 });
         }
 
@@ -186,12 +188,12 @@ export async function PUT(request: Request) {
         posts[index] = { ...posts[index], ...updates };
 
         fs.writeFileSync(mockFilePath, JSON.stringify(posts, null, 4));
-        console.log(`[API] Successfully updated post ${id}`);
+        console.log(`[API] Success: Post ${id} updated on disk`);
 
         return NextResponse.json({ success: true, post: posts[index] });
     } catch (error) {
-        console.error("Update Error:", error);
-        return NextResponse.json({ error: "Failed to update article" }, { status: 500 });
+        console.error("[API] Critical Failure during PUT:", error);
+        return NextResponse.json({ error: "Failed to update article on server" }, { status: 500 });
     }
 }
 

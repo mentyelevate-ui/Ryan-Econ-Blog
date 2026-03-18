@@ -21,10 +21,11 @@ export default function BlogPostContent({ post }: { post: any }) {
                         alt={post.title}
                         className="w-full h-full object-cover"
                     />
-                    {/* Global Dark Tint */}
-                    <div className="absolute inset-0 bg-navy-950/40" />
-                    {/* Stronger Bottom-up Gradient Scrim */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/90 to-transparent" />
+                    {/* Strong Global Dark Tint */}
+                    <div className="absolute inset-0 bg-navy-950/60" />
+                    {/* Multi-stage Scrim for maximum legibility */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/40 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-navy-950/40 via-transparent to-transparent" />
                 </div>
 
                 <div className="max-w-4xl mx-auto px-6 relative z-10 w-full">
