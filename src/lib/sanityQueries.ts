@@ -124,8 +124,9 @@ export async function getBlogPosts() {
             publishedAt,
             excerpt,
             readTime,
-            category,
-            "imageUrl": mainImage.asset->url
+            category->title,
+            "imageUrl": mainImage.asset->url,
+            "pdfUrl": pdfFile.asset->url
         }`;
         const data = await client.fetch(query);
 
@@ -153,8 +154,9 @@ export async function getPostBySlug(slug: string) {
             publishedAt,
             excerpt,
             readTime,
-            category,
+            category->title,
             "imageUrl": mainImage.asset->url,
+            "pdfUrl": pdfFile.asset->url,
             body,
             videoUrl
         }`;
