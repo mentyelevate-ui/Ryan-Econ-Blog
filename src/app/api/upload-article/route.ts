@@ -191,9 +191,12 @@ export async function PUT(request: Request) {
         console.log(`[API] Success: Post ${id} updated on disk`);
 
         return NextResponse.json({ success: true, post: posts[index] });
-    } catch (error) {
+    } catch (error: any) {
         console.error("[API] Critical Failure during PUT:", error);
-        return NextResponse.json({ error: "Failed to update article on server" }, { status: 500 });
+        return NextResponse.json({ 
+            error: "Failed to update article on server", 
+            details: error.message 
+        }, { status: 500 });
     }
 }
 

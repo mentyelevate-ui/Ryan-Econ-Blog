@@ -200,7 +200,7 @@ export default function AdminPage() {
                 await loadPosts();
             } else {
                 const errorData = await res.json().catch(() => ({ error: "Unknown error" }));
-                alert(`Save failed: ${errorData.error || res.statusText}`);
+                alert(`Save failed: ${errorData.error}${errorData.details ? `\n\nDetails: ${errorData.details}` : ""}`);
             }
         } catch (err) {
             alert("Save failed — check your connection and try again.");

@@ -28,30 +28,36 @@ export default function BlogPostContent({ post }: { post: any }) {
                     <div className="absolute inset-0 bg-gradient-to-b from-navy-950/40 via-transparent to-transparent" />
                 </div>
 
-                <div className="max-w-4xl mx-auto px-6 relative z-10 w-full">
+                <div className="max-w-4xl mx-auto px-6 relative z-10 w-full mb-4 sm:mb-8">
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
+                        className="glass p-8 sm:p-12 rounded-[2rem] border border-white/10 backdrop-blur-xl bg-navy-950/20 shadow-2xl relative overflow-hidden"
                     >
-                        <div className="flex items-center gap-3 mb-6">
-                            <span className="text-[10px] font-semibold uppercase tracking-widest px-3 py-1 rounded-full bg-gold-500/10 text-gold-400 border border-gold-500/20">
-                                {post.category}
-                            </span>
-                            <span className="text-xs text-slate-400">
-                                {new Date(post.publishedAt).toLocaleDateString("en-US", {
-                                    month: "long",
-                                    day: "numeric",
-                                    year: "numeric",
-                                })}
-                            </span>
+                        {/* Decorative internal glow */}
+                        <div className="absolute -top-24 -right-24 w-48 h-48 bg-gold-500/10 rounded-full blur-3xl" />
+                        
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-3 mb-6">
+                                <span className="text-[10px] font-semibold uppercase tracking-widest px-3 py-1 rounded-full bg-gold-500/10 text-gold-400 border border-gold-500/20">
+                                    {post.category}
+                                </span>
+                                <span className="text-xs text-slate-400">
+                                    {new Date(post.publishedAt).toLocaleDateString("en-US", {
+                                        month: "long",
+                                        day: "numeric",
+                                        year: "numeric",
+                                    })}
+                                </span>
+                            </div>
+                            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-white drop-shadow-2xl">
+                                {post.title}
+                            </h1>
+                            <p className="text-xl text-slate-200 leading-relaxed max-w-3xl font-light">
+                                {post.excerpt}
+                            </p>
                         </div>
-                        <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-white drop-shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
-                            {post.title}
-                        </h1>
-                        <p className="text-xl text-slate-200 leading-relaxed max-w-3xl font-light drop-shadow-md">
-                            {post.excerpt}
-                        </p>
                     </motion.div>
                 </div>
             </div>
