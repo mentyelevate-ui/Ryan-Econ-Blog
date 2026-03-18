@@ -402,12 +402,20 @@ export default function AdminPage() {
                             <span className="text-[10px] opacity-20 ml-2">v1.1.5-live</span>
                         </p>
                     </div>
-                    <button 
-                        onClick={handleLogout}
-                        className="text-xs font-medium text-slate-500 hover:text-crimson-400 transition-colors uppercase tracking-widest border border-slate-800 px-4 py-2 rounded-lg"
-                    >
-                        Log Out
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button 
+                            onClick={loadPosts}
+                            className="text-[10px] font-bold text-gold-400/60 hover:text-gold-400 transition-colors uppercase tracking-[0.2em] border border-gold-500/20 px-3 py-2 rounded-lg"
+                        >
+                            Sync Data
+                        </button>
+                        <button 
+                            onClick={handleLogout}
+                            className="text-xs font-medium text-slate-500 hover:text-crimson-400 transition-colors uppercase tracking-widest border border-slate-800 px-4 py-2 rounded-lg"
+                        >
+                            Log Out
+                        </button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -140,7 +140,7 @@ export default function BlogPostContent({ post }: { post: any }) {
                     transition={{ duration: 0.6, delay: 0.4 }}
                     className="prose-custom prose-lg max-w-none text-slate-300"
                 >
-                    {/* Native Content (Clean Rendering) */}
+                    {/* Conditional Rendering: Native Content (Preferred) vs PDF Fallback */}
                     {post.nativeContent ? (
                         <div className="mb-16 space-y-8">
                             <div className="flex items-center gap-4 mb-8">
@@ -149,7 +149,7 @@ export default function BlogPostContent({ post }: { post: any }) {
                                 <span className="flex-1 h-[1px] bg-gold-500/30" />
                             </div>
                             <div className="native-research-content text-slate-200 leading-[1.8] font-light space-y-6">
-                                {post.nativeContent.split('\n\n').map((para: string, idx: number) => (
+                                {(post.nativeContent || "").split('\n\n').filter((p: string) => p.trim()).map((para: string, idx: number) => (
                                     <p key={idx} className="first-letter:text-3xl first-letter:font-bold first-letter:text-gold-400 first-letter:float-left first-letter:mr-2 first-letter:mt-1">{para}</p>
                                 ))}
                             </div>
@@ -177,36 +177,37 @@ export default function BlogPostContent({ post }: { post: any }) {
                                 </div>
                             )}
                         </div>
-                    ) : (
+                    ) : post.pdfUrl ? (
                         /* Fallback to PDF Viewer if no native content */
-                        post.pdfUrl && (
-                            <div className="mb-12">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-xl font-display font-bold text-slate-200 m-0">Document Viewer</h2>
-                                    <a 
-                                        href={post.pdfUrl} 
-                                        download 
-                                        className="px-4 py-2 rounded-lg bg-gold-500/10 border border-gold-500/20 text-gold-400 text-sm font-semibold hover:bg-gold-500/20 transition-all flex items-center gap-2"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                        </svg>
-                                        Download Full Report
-                                    </a>
-                                </div>
-                                    <div className="aspect-[4/5] sm:aspect-video w-full glass rounded-2xl border border-slate-700/50 overflow-hidden shadow-2xl">
-                                    <iframe 
-                                        src={`${post.pdfUrl}#toolbar=0`} 
-                                        className="w-full h-full border-none scale-100 sm:scale-100"
-                                        title={post.title}
-                                    />
-                                </div>
+                        <div className="mb-12">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-xl font-display font-bold text-slate-200 m-0">Document Viewer</h2>
+                                <a 
+                                    href={post.pdfUrl} 
+                                    download 
+                                    className="px-4 py-2 rounded-lg bg-gold-500/10 border border-gold-500/20 text-gold-400 text-sm font-semibold hover:bg-gold-500/20 transition-all flex items-center gap-2"
+                                >
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    Download Full Report
+                                </a>
                             </div>
-                        )
-                    )}
+                            <div className="aspect-[4/5] sm:aspect-video w-full glass rounded-2xl border border-slate-700/50 overflow-hidden shadow-2xl">
+                                <iframe 
+                                    src={`${post.pdfUrl}#toolbar=0`} 
+                                    className="w-full h-full border-none scale-100 sm:scale-100"
+                                    title={post.title}
+                                />
+                            </div>
+                        </div>
+                    ) : null}
 
+                    {/* Rich Text / Portable Text Rendering */}
                     {post.body ? (
-                        <PortableText value={post.body} />
+                        <div className="mt-12 portable-text-container">
+                            <PortableText value={post.body} />
+                        </div>
                     ) : (
                         contentSections.map((section: string, i: number) => {
                             const trimmed = section.trim();
